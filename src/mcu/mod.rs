@@ -55,6 +55,10 @@ pub fn init() {
 
 	systick::init(cortex_peripherals.SYST);
 
+	// Enable all banks of SRAM and wait for SRAM_RDY to be set
+	peripherals.SYSCTL.sys_sram_banken.write(|w| w.bnk7_en().set_bit());
+	while peripherals.SYSCTL.sys_sram_banken.read().sram_rdy().is_sram_rdy_0() {};
+
 	init_clock(peripherals.CS);
 	
 	// adc::init(peripherals.SAADC);
