@@ -54,16 +54,30 @@ pub struct PinConfig{
 static DIO_HANDLE: Mutex<RefCell<Option<msp432p401r::DIO>>> = 
 	Mutex::new(RefCell::new(None));
 
+static mut INITIALIZED: bool = false;
+
 //==============================================================================
 // Public Functions
 //==============================================================================
 #[allow(dead_code)]
 pub fn init(dio: msp432p401r::DIO){
+	unsafe { if INITIALIZED {
+		return;
+	}}
+
 	free(|cs| DIO_HANDLE.borrow(cs).replace(Some(dio)));
+
+	unsafe {
+		INITIALIZED = true;
+	}
 }
 
 #[allow(dead_code)]
 pub fn get_pin_state(config: &PinConfig) -> PinState {
+	unsafe { if !INITIALIZED {
+		return PinState::PinLow;
+	}}
+
 	let read = free(|cs|
 		if let Some(ref mut dio) = DIO_HANDLE.borrow(cs).borrow_mut().deref_mut() {
 			match config.port {
@@ -92,11 +106,17 @@ pub fn get_pin_state(config: &PinConfig) -> PinState {
 
 #[allow(dead_code)]
 pub fn pin_disable(_config: &PinConfig) {
-
+	unsafe { if !INITIALIZED {
+		return;
+	}}
 }
 
 #[allow(dead_code)]
 pub fn pin_setup(config: &PinConfig){
+	unsafe { if !INITIALIZED {
+		return;
+	}}
+
 	free(|cs| {
 		if let Some(ref mut dio) = DIO_HANDLE.borrow(cs).borrow_mut().deref_mut() {
 			if let PinDirection::Input = config.direction {
@@ -161,6 +181,10 @@ pub fn pin_setup(config: &PinConfig){
 
 #[allow(dead_code)]
 pub fn set_pin_state(config: &PinConfig, state: PinState){
+	unsafe { if !INITIALIZED {
+		return;
+	}}
+	
 	free(|cs| {
 		if let Some(ref mut dio) = DIO_HANDLE.borrow(cs).borrow_mut().deref_mut() {
 			let out = state as u8;
@@ -183,6 +207,10 @@ pub fn set_pin_state(config: &PinConfig, state: PinState){
 
 #[allow(dead_code)]
 pub fn set_pin_function_select(config: &PinConfig, function: u8){
+	unsafe { if !INITIALIZED {
+		return;
+	}}
+
 	free(|cs| {
 		if let Some(ref mut dio) = DIO_HANDLE.borrow(cs).borrow_mut().deref_mut() {
 			let sel0 = if (function & 0x1) > 0 { 1 } else { 0 };
