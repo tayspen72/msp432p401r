@@ -24,6 +24,9 @@
 			"device": "msp432p401r",
 			"executable": "${workspaceRoot}/target/thumbv7em-none-eabihf/debug/app", 
 			"interface": "jtag",
+			"postLaunchCommands": [
+				"monitor arm semihosting enable",
+			],
 			"runToMain": true,
 			"servertype": "openocd",
 			"svdFile": "./MSP432P401R.svd",
