@@ -58,6 +58,13 @@ pub fn init() {
 	// Enable all banks of SRAM and wait for SRAM_RDY to be set
 	peripherals.SYSCTL.sys_sram_banken.write(|w| w.bnk7_en().set_bit());
 	while peripherals.SYSCTL.sys_sram_banken.read().sram_rdy().is_sram_rdy_0() {};
+	
+	// Disable the watchdog (indefinitely, for now)
+	peripherals.WDT_A.wdtctl.write(|w| unsafe { w
+		.wdtpw().bits(0x5A)
+		.wdthold().wdthold_1()
+		.wdtis().wdtis_0()
+	});
 
 	init_clock(peripherals.CS);
 	
