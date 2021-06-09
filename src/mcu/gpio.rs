@@ -117,6 +117,8 @@ pub fn pin_setup(config: &PinConfig){
 		return;
 	}}
 
+	let mut state: PinState = PinState::PinLow;
+	
 	free(|cs| {
 		if let Some(ref mut dio) = DIO_HANDLE.borrow(cs).borrow_mut().deref_mut() {
 			if let PinDirection::Input = config.direction {
@@ -152,8 +154,7 @@ pub fn pin_setup(config: &PinConfig){
 				}
 
 				// Set the pull state based on the otuput register value
-				let pull_state = if let PinPull::PullUp = config.pull { PinState::PinHigh } else { PinState::PinLow };
-				set_pin_state(config, pull_state);
+				state = if let PinPull::PullUp = config.pull { PinState::PinHigh } else { PinState::PinLow };
 			}
 			else {
 				// Set pin direction
@@ -172,11 +173,13 @@ pub fn pin_setup(config: &PinConfig){
 				}
 
 				// Set output value
-				let state = config.state;
-				set_pin_state(config, state);
+				state = config.state;
 			}
 		}
 	});
+	
+	// Set the pin state after this critical section is left
+	set_pin_state(config, state);
 }
 
 #[allow(dead_code)]
