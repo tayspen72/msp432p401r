@@ -32,6 +32,7 @@ pub struct SystemClock{
 // Variables
 //==============================================================================
 #[allow(dead_code)]
+#[derive(Copy, Clone, PartialEq)]
 pub enum Port{
 	Port1,
 	Port2,
