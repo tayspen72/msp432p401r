@@ -7,7 +7,6 @@
 // Crates and Mods
 //==============================================================================
 use crate::config;
-use crate::mcu;
 use crate::mcu::gpio;
 
 //==============================================================================
@@ -39,7 +38,7 @@ const COM_LINES: [gpio::PinConfig; 5] = [
 		pin: config::SEVEN_SEG_COM2_PIN,
 		direction: gpio::PinDirection::Output,
 		pull: gpio::PinPull::PullDisabled,
-		state: gpio::PinState::PinLow,
+		state: gpio::PinState::PinHigh,
 	},
 	gpio::PinConfig {
 		port: config::SEVEN_SEG_COM3_PORT,
@@ -53,7 +52,7 @@ const COM_LINES: [gpio::PinConfig; 5] = [
 		pin: config::SEVEN_SEG_COM4_PIN,
 		direction: gpio::PinDirection::Output,
 		pull: gpio::PinPull::PullDisabled,
-		state: gpio::PinState::PinHigh,
+		state: gpio::PinState::PinLow,
 	},
 ];
 
@@ -64,49 +63,49 @@ const SEG_LINES: [gpio::PinConfig; 7] = [
 		pin: config::SEVEN_SEG_SEGA_PIN,
 		direction: gpio::PinDirection::Output,
 		pull: gpio::PinPull::PullDisabled,
-		state: gpio::PinState::PinHigh,
+		state: gpio::PinState::PinLow,
 	},
 	gpio::PinConfig {
 		port: config::SEVEN_SEG_SEGB_PORT,
 		pin: config::SEVEN_SEG_SEGB_PIN,
 		direction: gpio::PinDirection::Output,
 		pull: gpio::PinPull::PullDisabled,
-		state: gpio::PinState::PinHigh,
+		state: gpio::PinState::PinLow,
 	},
 	gpio::PinConfig {
 		port: config::SEVEN_SEG_SEGC_PORT,
 		pin: config::SEVEN_SEG_SEGC_PIN,
 		direction: gpio::PinDirection::Output,
 		pull: gpio::PinPull::PullDisabled,
-		state: gpio::PinState::PinHigh,
+		state: gpio::PinState::PinLow,
 	},
 	gpio::PinConfig {
 		port: config::SEVEN_SEG_SEGD_PORT,
 		pin: config::SEVEN_SEG_SEGD_PIN,
 		direction: gpio::PinDirection::Output,
 		pull: gpio::PinPull::PullDisabled,
-		state: gpio::PinState::PinHigh,
+		state: gpio::PinState::PinLow,
 	},
 	gpio::PinConfig {
 		port: config::SEVEN_SEG_SEGE_PORT,
 		pin: config::SEVEN_SEG_SEGE_PIN,
 		direction: gpio::PinDirection::Output,
 		pull: gpio::PinPull::PullDisabled,
-		state: gpio::PinState::PinHigh,
+		state: gpio::PinState::PinLow,
 	},
 	gpio::PinConfig {
 		port: config::SEVEN_SEG_SEGF_PORT,
 		pin: config::SEVEN_SEG_SEGF_PIN,
 		direction: gpio::PinDirection::Output,
 		pull: gpio::PinPull::PullDisabled,
-		state: gpio::PinState::PinHigh,
+		state: gpio::PinState::PinLow,
 	},
 	gpio::PinConfig {
 		port: config::SEVEN_SEG_SEGG_PORT,
 		pin: config::SEVEN_SEG_SEGG_PIN,
 		direction: gpio::PinDirection::Output,
 		pull: gpio::PinPull::PullDisabled,
-		state: gpio::PinState::PinHigh,
+		state: gpio::PinState::PinLow,
 	},
 ];
 
@@ -123,10 +122,6 @@ pub fn init(){
 		gpio::set_pin_function_select(seg, 0);
 		gpio::pin_setup(seg);
 	}
-	gpio::print_dir(mcu::Port::Port2);
-	gpio::print_out(mcu::Port::Port2);
-	gpio::print_dir(mcu::Port::Port4);
-	gpio::print_out(mcu::Port::Port4);
 }
 //==============================================================================
 // Private Functions
