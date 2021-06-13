@@ -54,8 +54,6 @@ use crate::mcu;
 //==============================================================================
 // Seven Segment
 //==============================================================================
-#[allow(dead_code)] pub const SEVEN_SEG_UPDATE_FREQUENCY: u32 = 1000;
-
 #[allow(dead_code)] pub const SEVEN_SEG_COM0_PORT: mcu::Port = mcu::Port::Port2;
 #[allow(dead_code)] pub const SEVEN_SEG_COM0_PIN: u8 = 4;
 #[allow(dead_code)] pub const SEVEN_SEG_COM1_PORT: mcu::Port = mcu::Port::Port2;

@@ -8,7 +8,6 @@
 //==============================================================================
 use crate::config;
 use crate::mcu::gpio;
-use crate::mcu::systick;
 
 //==============================================================================
 // Enums, Structs, and Types
@@ -25,28 +24,28 @@ const COM_LINES: [gpio::PinConfig; 5] = [
 		pin: config::SEVEN_SEG_COM0_PIN,
 		direction: gpio::PinDirection::Output,
 		pull: gpio::PinPull::PullDisabled,
-		state: gpio::PinState::PinHigh,
+		state: gpio::PinState::PinLow,
 	},
 	gpio::PinConfig {
 		port: config::SEVEN_SEG_COM1_PORT,
 		pin: config::SEVEN_SEG_COM1_PIN,
 		direction: gpio::PinDirection::Output,
 		pull: gpio::PinPull::PullDisabled,
-		state: gpio::PinState::PinHigh,
+		state: gpio::PinState::PinLow,
 	},
 	gpio::PinConfig {
 		port: config::SEVEN_SEG_COM2_PORT,
 		pin: config::SEVEN_SEG_COM2_PIN,
 		direction: gpio::PinDirection::Output,
 		pull: gpio::PinPull::PullDisabled,
-		state: gpio::PinState::PinHigh,
+		state: gpio::PinState::PinLow,
 	},
 	gpio::PinConfig {
 		port: config::SEVEN_SEG_COM3_PORT,
 		pin: config::SEVEN_SEG_COM3_PIN,
 		direction: gpio::PinDirection::Output,
 		pull: gpio::PinPull::PullDisabled,
-		state: gpio::PinState::PinHigh,
+		state: gpio::PinState::PinLow,
 	},
 	gpio::PinConfig {
 		port: config::SEVEN_SEG_COM4_PORT,
@@ -111,17 +110,17 @@ const SEG_LINES: [gpio::PinConfig; 7] = [
 ];
 
 const NUMERIC_VALUES: [NumericValues; 11] = [
-	[ true, true, true, true, true, true, false ],		// 0
-	[ false, true, true, false, false, false, false ],	// 1
-	[ true, true, false, true, true, false, true ],		// 2
-	[ true, true, true, true, false, false, true ],		// 3
-	[ false, true, true, false, false, true, true ],	// 4
-	[ true, false, true, true, false, true, true ],		// 5
-	[ true, false, true, true, true, true, true ],		// 6
-	[ true, true, true, false, false, false, false ],	// 7
-	[ true, true, true, true, true, true, true ],		// 8
-	[ true, true, true, true, false, true, true ],		// 9
-	[ false, false, false, false, false, false, false ],// " "
+	[ false, false, false, false, false, false, true ],		// 0
+	[ true, false, false, true, true, true, true ],			// 1
+	[ false, false, true, false, false, true, false ],		// 2
+	[ false, false, false, false, true, true, false ],		// 3
+	[ true, false, false, true, true, false, false ],		// 4
+	[ false, true, false, false, true, false, false ],		// 5
+	[ false, true, false, false, false, false, false ],		// 6
+	[ false, false, false, true, true, true, true ],		// 7
+	[ false, false, false, false, false, false, false ],	// 8
+	[ false, false, false, false, true, false, false ],		// 9
+	[ true, true, true, true, true, true, true ],			// " "
 ];
 
 static mut DISPLAY_VALUE: [u8; 4] = [ 0, 0, 0, 0];
@@ -159,7 +158,7 @@ fn set_segments(mut value: usize) {
 		value = 10; // Will display a blank
 	}
 
-	for s in 0..=7 {
+	for s in 0..7 {
 		if NUMERIC_VALUES[value][s] {
 			gpio::set_pin_state(&SEG_LINES[s], gpio::PinState::PinHigh);
 		}
@@ -178,22 +177,17 @@ fn set_segments(mut value: usize) {
 // Task Handler
 //==============================================================================
 pub fn task_handler(){
-	static mut ACTIVE_COM: usize = 0;
-	static mut LAST_TIME: u32 = 0;
+	static mut ACTIVE_COM: usize = 3;
 
 	unsafe {
-		if systick::get_diff(LAST_TIME) > config::SEVEN_SEG_UPDATE_FREQUENCY {
-			LAST_TIME = systick::get_ticks();
+		// Set the last line high (off)
+		gpio::set_pin_state(&COM_LINES[ACTIVE_COM], gpio::PinState::PinLow);
+		ACTIVE_COM = if ACTIVE_COM == 3 { 0 } else { ACTIVE_COM + 1 };
 
-			// Set the last line high (off)
-			gpio::set_pin_state(&COM_LINES[ACTIVE_COM], gpio::PinState::PinLow);
-			ACTIVE_COM = if ACTIVE_COM == 3 { 0 } else { ACTIVE_COM + 1 };
+		// Update the segments
+		set_segments(DISPLAY_VALUE[ACTIVE_COM].into());
 
-			// Updatae the segments
-			set_segments(3 - ACTIVE_COM);
-
-			// Set the next line low (active)
-			gpio::set_pin_state(&COM_LINES[ACTIVE_COM], gpio::PinState::PinHigh);
-		}
+		// Set the next line low (active)
+		gpio::set_pin_state(&COM_LINES[ACTIVE_COM], gpio::PinState::PinHigh);
 	}
 }
