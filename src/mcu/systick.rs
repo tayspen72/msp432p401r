@@ -18,7 +18,6 @@ use cortex_m_rt::exception;
 //==============================================================================
 // Variables
 //==============================================================================
-const SYSTICK_FREQUENCY: u32 = 1;	//Hz
 static mut INITIALIZED: bool = false;
 static SYSTICK_HANDLE: Mutex<RefCell<Option<cortex_m::peripheral::SYST>>> = 
 	Mutex::new(RefCell::new(None));
@@ -66,8 +65,8 @@ fn configure (systick: &mut cortex_m::peripheral::SYST) {
 	// Set the systick clock source
 	systick.set_clock_source(cortex_m::peripheral::syst::SystClkSource::Core);
 	
-	// Core should be running at 24MHz - fire every second
-	systick.set_reload(24_000_000);
+	// Core should be running at 24MHz - div by 100, fire every 10ms
+	systick.set_reload(240_000);
 	
 	systick.clear_current();
 	systick.enable_counter();
@@ -79,12 +78,8 @@ fn configure (systick: &mut cortex_m::peripheral::SYST) {
 //==============================================================================
 #[exception]
 fn SysTick() {
-	static mut COUNT: u32 = 0;
-	*COUNT = *COUNT + 1;
-	if *COUNT == SYSTICK_FREQUENCY {
-		* COUNT = 0;
-		free(|cs| SYSTICK_TIME.borrow(cs).set(SYSTICK_TIME.borrow(cs).get() + 1));
-	}
+	// Increment the systick count
+	free(|cs| SYSTICK_TIME.borrow(cs).set(SYSTICK_TIME.borrow(cs).get() + 1));
 }
 
 //==============================================================================
