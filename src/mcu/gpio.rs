@@ -12,7 +12,7 @@ use core::ops::DerefMut;
 use cortex_m::interrupt::{free, Mutex};
 use cortex_m_semihosting::hprintln;
 use crate::mcu;
-use msp432p401r;
+use msp432p401r_pac;
 
 //==============================================================================
 // Enums, Structs, and Types
@@ -52,7 +52,7 @@ pub struct PinConfig{
 //==============================================================================
 // Variables
 //==============================================================================
-static DIO_HANDLE: Mutex<RefCell<Option<msp432p401r::DIO>>> = 
+static DIO_HANDLE: Mutex<RefCell<Option<msp432p401r_pac::DIO>>> = 
 	Mutex::new(RefCell::new(None));
 
 static mut INITIALIZED: bool = false;
@@ -61,7 +61,7 @@ static mut INITIALIZED: bool = false;
 // Public Functions
 //==============================================================================
 #[allow(dead_code)]
-pub fn init(dio: msp432p401r::DIO){
+pub fn init(dio: msp432p401r_pac::DIO){
 	unsafe { if INITIALIZED {
 		return;
 	}}
