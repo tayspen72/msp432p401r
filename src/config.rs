@@ -33,8 +33,11 @@ use crate::mcu;
 //==============================================================================
 // I2C
 //==============================================================================
-#[allow(dead_code)] pub const SEVEN_SEG_COM0_PORT: mcu::Port = mcu::Port::Port2;
-#[allow(dead_code)] pub const SEVEN_SEG_COM0_PIN: u8 = 4;
+// Using UBC0
+#[allow(dead_code)] pub const I2C_SDA_PORT: mcu::Port = mcu::Port::Port1;
+#[allow(dead_code)] pub const I2C_SDA_PIN: u8 = 6;
+#[allow(dead_code)] pub const I2C_SCL_PORT: mcu::Port = mcu::Port::Port1;
+#[allow(dead_code)] pub const I2C_SCL_PIN: u8 = 7;
 
 //==============================================================================
 // LCD
