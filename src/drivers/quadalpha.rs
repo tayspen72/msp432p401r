@@ -9,7 +9,7 @@
 // Crates and Mods
 //==============================================================================
 use crate::config;
-use mcu::i2c;
+use crate::mcu::eusci;
 
 //==============================================================================
 // Enums, Structs, and Types
@@ -72,15 +72,14 @@ enum QuadAlphaRegister {
 	Dimming = 0xE0,
 }
 
-const I2C: sercom::I2c = sercom::I2c {
-	address: config::I2C_ADDRESS,
-	speed: config::I2C_SPEED,
+const I2C: eusci::I2C = eusci::I2C {
 	sda_port: config::I2C_SDA_PORT,
 	sda_pin: config::I2C_SDA_PIN,
 	scl_port: config::I2C_SCL_PORT,
 	scl_pin: config::I2C_SCL_PIN,
-	sercom: config::I2C_SERCOM,
-	pmux: config::I2C_PMUX,
+	eusci: config::I2C_EUSCI,
+	address: config::I2C_ADDRESS,
+	speed: config::I2C_SPEED,
 };
 
 
@@ -88,7 +87,7 @@ const I2C: sercom::I2c = sercom::I2c {
 // Public Functions
 //==============================================================================
 pub fn init() {
-	sercom::i2c_init(&I2C);
+	eusci::i2c_init(&I2C);
 	configure();
 	write(&['1', '2', '3', '4']);
 }
@@ -149,10 +148,10 @@ fn get_character(c: char) -> QuadAlphaCharacter {
 #[allow(dead_code)]
 fn get_int_address(send_stop: bool) -> u8 {
 	let data = QuadAlphaRegister::IntAddress as u8;
-	sercom::i2x_write_block(&I2C, &[data], false);
+	eusci::i2c_write_block(&I2C, &[data], false);
 	
 	let mut read: [u8; 1] = [0x0];
-	sercom::i2c_read_block(&I2C, &mut read, send_stop);
+	eusci::i2c_read_block(&I2C, &mut read, send_stop);
 	
 	read[0]
 }
@@ -160,10 +159,10 @@ fn get_int_address(send_stop: bool) -> u8 {
 #[allow(dead_code)]
 fn get_key_address(send_stop: bool) -> u8 {
 	let data = QuadAlphaRegister::KeyAddress as u8;
-	sercom::i2x_write_block(&I2C, &[data], false);
+	eusci::i2c_write_block(&I2C, &[data], false);
 	
 	let mut read: [u8; 1] = [0x0];
-	sercom::i2c_read_block(&I2C, &mut read, send_stop);
+	eusci::i2c_read_block(&I2C, &mut read, send_stop);
 	
 	read[0] & 0x07
 }
@@ -171,7 +170,7 @@ fn get_key_address(send_stop: bool) -> u8 {
 #[allow(dead_code)]
 fn set_display_address(address: u8, send_stop: bool) {
 	let data = QuadAlphaRegister::DisplayAddress as u8 | (address & 0x0F);
-	sercom::i2x_write_block(&I2C, &[data], send_stop);
+	eusci::i2c_write_block(&I2C, &[data], send_stop);
 }
 
 #[allow(dead_code)]
@@ -182,13 +181,13 @@ fn set_display_setup(blink: u8, status: bool, send_stop: bool) {
 	}
 	data |= (blink & 0x3) << 1;
 	
-	sercom::i2x_write_block(&I2C, &[data], send_stop);
+	eusci::i2c_write_block(&I2C, &[data], send_stop);
 }
 
 #[allow(dead_code)]
 fn set_dimming(dimming: u8, send_stop: bool) {
 	let data = QuadAlphaRegister::Dimming as u8 | (dimming & 0x0F);
-	sercom::i2x_write_block(&I2C, &[data], send_stop);
+	eusci::i2c_write_block(&I2C, &[data], send_stop);
 }
 
 #[allow(dead_code)]
@@ -201,7 +200,7 @@ fn set_row_int(row: bool, polarity: bool, send_stop: bool) {
 		data |= 0x1;
 	}
 		
-	sercom::i2x_write_block(&I2C, &[data], send_stop);
+	eusci::i2c_write_block(&I2C, &[data], send_stop);
 }
 
 #[allow(dead_code)]
@@ -213,7 +212,7 @@ fn set_system_setup(enable: bool, send_stop: bool) {
 		QuadAlphaRegister::SystemSetup as u8
 	};
 	
-	sercom::i2x_write_block(&I2C, &[data], send_stop);
+	eusci::i2c_write_block(&I2C, &[data], send_stop);
 }
 
 fn write(buf: &[char; 4]){
@@ -225,7 +224,7 @@ fn write(buf: &[char; 4]){
 	];
 	
 	set_display_address(0x0, false);
-	sercom::i2x_write_block(
+	eusci::i2c_write_block(
 		&I2C, &[
 			data[0].0, data[0].1,
 			data[1].0, data[1].1,
