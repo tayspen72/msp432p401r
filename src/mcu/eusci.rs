@@ -108,15 +108,20 @@ pub fn i2c_init(i2c: &I2C){
 					eusci.ucbx_ctlw0.write(|w| w.ucswrst().set_bit());
 					
 					eusci.ucbx_ctlw0.modify(|_, w| w
-						.ucssel().ucssel_0()
+						.ucssel().ucssel_2()
 						.ucsync().set_bit()
 						.ucmst().set_bit()
 						.ucmm().clear_bit()
 						.ucsla10().clear_bit()
 						.uca10().clear_bit()
 					);
+
+					// Determine baud rate values
+					let brw = mcu::get_system_clock().sm_clk / i2c.speed;
+					eusci.ucbx_brw.write(|w| unsafe { w.ucbr().bits(brw as u16) });
 					
-					
+					// Release the bit to use this config
+					eusci.ucbx_ctlw0.modify(|_, w| w.ucswrst().set_bit());
 				}
 			},
 			EUSCI::B1 => {
