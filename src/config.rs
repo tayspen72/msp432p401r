@@ -7,6 +7,7 @@
 // Crates and Mods
 //==============================================================================
 use crate::mcu;
+use crate::mcu::eusci;
 
 //==============================================================================
 // Clock
@@ -33,11 +34,13 @@ use crate::mcu;
 //==============================================================================
 // I2C
 //==============================================================================
-// Using UBC0
 #[allow(dead_code)] pub const I2C_SDA_PORT: mcu::Port = mcu::Port::Port1;
 #[allow(dead_code)] pub const I2C_SDA_PIN: u8 = 6;
 #[allow(dead_code)] pub const I2C_SCL_PORT: mcu::Port = mcu::Port::Port1;
 #[allow(dead_code)] pub const I2C_SCL_PIN: u8 = 7;
+#[allow(dead_code)] pub const I2C_EUSCI: eusci::EUSCI = eusci::EUSCI::B0;
+#[allow(dead_code)] pub const I2C_ADDRESS: u8 = 0xFF;
+#[allow(dead_code)] pub const I2C_SPEED: u32 = 400_000;
 
 //==============================================================================
 // LCD

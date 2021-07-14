@@ -32,11 +32,13 @@ pub enum EUSCI{
 #[allow(dead_code)]
 #[derive(Copy, Clone, PartialEq)]
 pub struct I2C{
-	sda_pin: u8,
-	sda_port: mcu::Port,
-	scl_pin: u8,
-	scl_port: mcu::Port,
-	eusci: EUSCI,
+	pub sda_port: mcu::Port,
+	pub sda_pin: u8,
+	pub scl_port: mcu::Port,
+	pub scl_pin: u8,
+	pub eusci: EUSCI,
+	pub address: u8,
+	pub speed: u32
 }
 
 //==============================================================================
@@ -93,7 +95,7 @@ pub fn init(
 	}
 }
 
-pub fn init_i2c(i2c: I2C){
+pub fn i2c_init(i2c: &I2C){
 	free(|cs| {
 		match i2c.eusci {
 			EUSCI::A0 => (),
@@ -134,6 +136,14 @@ pub fn init_i2c(i2c: I2C){
 			},
 		}
 	});
+}
+
+pub fn i2c_write_block(i2c: &I2C, data: &[u8], send_stop: bool){
+
+}
+
+pub fn i2c_read_block(i2c: &I2C, data: &[u8], send_stop: bool){
+
 }
 
 //==============================================================================
