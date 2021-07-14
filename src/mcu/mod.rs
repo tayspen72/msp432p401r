@@ -11,7 +11,7 @@ use msp432p401r_pac;
 
 use crate::config;
 
-mod eusci;
+pub mod eusci;
 pub mod gpio;
 pub mod systick;
 pub mod wdt;
@@ -24,11 +24,12 @@ pub enum McuState {
 }
 
 #[allow(dead_code)]
+#[derive(Copy, Clone, PartialEq)]
 pub struct SystemClock{
-	pub a_clk: u32,
 	pub m_clk: u32,
 	pub hsm_clk: u32,
 	pub sm_clk: u32,
+	pub a_clk: u32,
 	pub b_clk: u32
 }
 
@@ -80,6 +81,14 @@ const LFXT_CLK_OUT: gpio::PinConfig = gpio::PinConfig {
 	state: gpio::PinState::PinHigh,
 };
 
+static mut SYSTEM_CLOCK: SystemClock = SystemClock {
+	m_clk: 0,
+	hsm_clk: 0,
+	sm_clk: 0,
+	a_clk: 0,
+	b_clk: 0,
+};
+
 //==============================================================================
 // Public Functions
 //==============================================================================
@@ -124,6 +133,11 @@ pub fn init() {
 #[allow(dead_code)]
 pub fn get_busy() -> McuState {
 	McuState::Idle
+}
+
+#[allow(dead_code)]
+pub fn get_system_clock() -> SystemClock {
+	unsafe { SYSTEM_CLOCK } 
 }
 
 #[allow(dead_code)]
@@ -183,6 +197,16 @@ fn init_clock(clock: msp432p401r_pac::CS) {
 	
 	// Lock the clock registers when finished
 	clock.cskey.write(|w| unsafe { w.cskey().bits(0xFFFF) });
+
+	unsafe {
+		SYSTEM_CLOCK = SystemClock {
+			m_clk: 48_000_000,
+			hsm_clk: 24_000_000,
+			sm_clk: 6_000_000,
+			a_clk: 32_768,
+			b_clk: 32_768,
+		};
+	}
 }
 
 //==============================================================================
