@@ -144,7 +144,53 @@ pub fn i2c_init(i2c: &I2C){
 }
 
 pub fn i2c_write_block(i2c: &I2C, data: &[u8], send_stop: bool){
+	free(|cs| {
+		match i2c.eusci {
+			EUSCI::A0 => (),
+			EUSCI::A1 => (),
+			EUSCI::A2 => (),
+			EUSCI::A3 => (),
+			EUSCI::B0 => {
+				if let Some(ref mut eusci) = EUSCI_B0_HANDLE.borrow(cs).borrow_mut().deref_mut() {
+					// Set to transmitter mode
+					eusci.ucbx_ctlw0.modify(|_, w| w.uctr().set_bit());
 
+					// Send start condition and address
+					eusci.ucbx_ctlw0.modify(|_, w| w.uctxstt().set_bit());
+
+					// Wait for bus to be ready for transmit
+					while eusci.ucbx_ifg.read().uctxifg0().is_uctxifg0_0() {}
+
+					if let Some((last, buf)) = data.split_last() {
+						if !buf.is_empty() {
+							for byte in buf.into_iter() {
+								// Load byte into transmit buffer
+								eusci.ucbx_txbuf.write(|w| unsafe { w.uctxbuf().bits(*byte) });
+
+								// Wait for transmit
+								while eusci.ucbx_ifg.read().uctxifg0().is_uctxifg0_0() {}
+							}
+
+							// Send last byte
+							eusci.ucbx_txbuf.write(|w| unsafe { w.uctxbuf().bits(*last) });
+
+							// Send stop condition on next transmission if needed
+							if send_stop {
+								eusci.ucbx_ctlw0.modify(|_, w| w.uctxstp().set_bit());
+							}
+
+							// Wait for transmission to stop
+							
+						}
+					}
+				}
+			},
+			EUSCI::B1 => (),
+			EUSCI::B2 => (),
+			EUSCI::B3 => (),
+		}
+
+	});
 }
 
 pub fn i2c_read_block(i2c: &I2C, data: &[u8], send_stop: bool){
