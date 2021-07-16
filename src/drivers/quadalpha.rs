@@ -78,10 +78,10 @@ const I2C: eusci::I2C = eusci::I2C {
 	scl_port: config::I2C_SCL_PORT,
 	scl_pin: config::I2C_SCL_PIN,
 	eusci: config::I2C_EUSCI,
+	function_select: config::I2C_FUNCTION_SELECT,
 	address: config::I2C_ADDRESS,
 	speed: config::I2C_SPEED,
 };
-
 
 //==============================================================================
 // Public Functions

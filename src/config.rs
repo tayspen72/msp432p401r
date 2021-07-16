@@ -41,6 +41,7 @@ use crate::mcu::eusci;
 #[allow(dead_code)] pub const I2C_EUSCI: eusci::EUSCI = eusci::EUSCI::B0;
 #[allow(dead_code)] pub const I2C_ADDRESS: u8 = 0xFF;
 #[allow(dead_code)] pub const I2C_SPEED: u32 = 400_000;
+#[allow(dead_code)] pub const I2C_FUNCTION_SELECT: u8 = 0b01;
 
 //==============================================================================
 // LCD
