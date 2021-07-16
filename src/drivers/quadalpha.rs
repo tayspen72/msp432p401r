@@ -88,19 +88,24 @@ const I2C: eusci::I2C = eusci::I2C {
 //==============================================================================
 pub fn init() {
 	eusci::i2c_init(&I2C);
-	configure();
-	write(&['1', '2', '3', '4']);
+	if let Some(err) = eusci::i2c_write_block(&I2C, &[0x1, 0x2, 0x3, 0x4, 0x5], true) {
+		eusci::i2c_print_err(err);
+	}
+	// configure();
+	// write(&['1', '2', '3', '4']);
 }
 
 //==============================================================================
 // Private Functions
 //==============================================================================
+#[allow(dead_code)]
 fn configure() {
 	set_system_setup(true, false);
 	set_dimming(0x7, false);
 	set_display_setup(0x0, true, true);
 }
 
+#[allow(dead_code)]
 fn get_character(c: char) -> QuadAlphaCharacter {
 	match c {
 		'1' => CHARACTERS[0],
@@ -215,6 +220,7 @@ fn set_system_setup(enable: bool, send_stop: bool) {
 	eusci::i2c_write_block(&I2C, &[data], send_stop);
 }
 
+#[allow(dead_code)]
 fn write(buf: &[char; 4]){
 	let data = [
 		get_character(buf[0]), 

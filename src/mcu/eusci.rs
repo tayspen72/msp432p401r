@@ -10,6 +10,7 @@
 use core::cell::RefCell;
 use core::ops::DerefMut;
 use cortex_m::interrupt::{free, Mutex};
+use cortex_m_semihosting::hprintln;
 use crate::mcu;
 use crate::mcu::gpio;
 use msp432p401r_pac;
@@ -45,6 +46,7 @@ pub struct I2C{
 
 #[allow(dead_code)]
 #[derive(Copy, Clone, PartialEq)]
+#[derive(Debug)]
 pub enum I2CError {
 	AddressNack,
 	DataNack,
@@ -184,6 +186,10 @@ pub fn i2c_init(i2c: &I2C){
 			EUSCI::B3 => (),
 		}
 	});
+}
+
+pub fn i2c_print_err(err: I2CError) {
+	hprintln!("I2c Error: {:?}", err).unwrap();
 }
 
 pub fn i2c_write_block(i2c: &I2C, data: &[u8], send_stop: bool) -> Option<I2CError> {
