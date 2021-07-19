@@ -43,13 +43,13 @@ pub fn init(mut systick: cortex_m::peripheral::SYST) {
 }
 
 #[allow(dead_code)]
-pub fn get_ticks() -> u32 {
+pub fn get_time() -> u32 {
 	free(|cs| SYSTICK_TIME.borrow(cs).get())
 }
 
 #[allow(dead_code)]
 pub fn get_diff(diff: u32) -> u32 {
-	let current = get_ticks();
+	let current = get_time();
 	if diff > current {
 		0
 	}
