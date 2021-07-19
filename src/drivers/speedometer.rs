@@ -1,13 +1,14 @@
 //==============================================================================
 // Notes
 //==============================================================================
-// drivers::mod.rs
+// drivers/speedometer.rs
+// The means for determing speed
 
 //==============================================================================
 // Crates and Mods
 //==============================================================================
-pub mod quadalpha;
-pub mod speedometer;
+use crate::config;
+use crate::mcu::counter;
 
 //==============================================================================
 // Enums, Structs, and Types
@@ -17,14 +18,19 @@ pub mod speedometer;
 //==============================================================================
 // Variables
 //==============================================================================
-
+const COUNTER: counter::Counter = counter::Counter {
+	taclk_port: config::COUNTER_TACLK_PORT,
+	taclk_pin: config::COUNTER_TACLK_PIN,
+	taclk: config::COUNTER_TACLK,
+	function_select: config::COUNTER_FUNCTION_SELECT
+};
 
 //==============================================================================
 // Public Functions
 //==============================================================================
 pub fn init() {
-	quadalpha::init();
-	speedometer::init();
+	counter::setup(&COUNTER);
+	counter::start(&COUNTER, true);
 }
 
 //==============================================================================
@@ -35,7 +41,6 @@ pub fn init() {
 //==============================================================================
 // Task Handler
 //==============================================================================
-pub fn task_handler() {
-	quadalpha::task_handler();
-	speedometer::task_handler();
+pub fn task_handler(){
+
 }

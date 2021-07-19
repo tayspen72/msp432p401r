@@ -8,9 +8,10 @@
 // Crates and Mods
 //==============================================================================
 use core::cell::RefCell;
-// use core::ops::DerefMut;
+use core::ops::DerefMut;
 use cortex_m::interrupt::{free, Mutex};
 use crate::mcu;
+use crate::mcu::gpio;
 use msp432p401r_pac;
 
 //==============================================================================
@@ -18,14 +19,20 @@ use msp432p401r_pac;
 //==============================================================================
 #[allow(dead_code)]
 #[derive(Copy, Clone, PartialEq)]
+pub enum TaClk {
+	A0, 
+	A1, 
+	A2, 
+	A3
+}
+
+#[allow(dead_code)]
+#[derive(Copy, Clone, PartialEq)]
 pub struct Counter{
-	pub sda_port: mcu::Port,
-	pub sda_pin: u8,
-	pub scl_port: mcu::Port,
-	pub scl_pin: u8,
+	pub taclk_port: mcu::Port,
+	pub taclk_pin: u8,
+	pub taclk: TaClk,
 	pub function_select: u8,
-	pub address: u8,
-	pub speed: u32
 }
 
 //==============================================================================
@@ -64,6 +71,180 @@ pub fn init(
 	unsafe {
 		INITIALIZED = true;
 	}
+}
+
+#[allow(dead_code)]
+pub fn setup(counter: &Counter) {
+	gpio::pin_setup(&gpio::PinConfig {
+		port: counter.taclk_port,
+		pin: counter.taclk_pin,
+		direction: gpio::PinDirection::Output,
+		pull: gpio::PinPull::PullDisabled,
+		state: gpio::PinState::PinHigh
+	});
+	gpio::set_pin_function_select(
+		&gpio::PinConfig {
+			port: counter.taclk_port,
+			pin: counter.taclk_pin,
+			direction: gpio::PinDirection::Output,
+			pull: gpio::PinPull::PullDisabled,
+			state: gpio::PinState::PinHigh
+		},
+		counter.function_select
+	);
+	
+	free(|cs| {
+		match counter.taclk {
+			TaClk::A0 => {
+				if let Some(ref mut timer) = TIMER_A0_HANDLE.borrow(cs).borrow_mut().deref_mut() {
+					// Stop the timer for config
+					timer.tax_ctl.write(|w| w.mc().mc_0());
+					
+					timer.tax_ctl.modify(|_, w| w
+						.tassel().tassel_0()	// Use TA CLK as count source
+						.id().id_0()			// Use no divider
+						.taclr().set_bit()		// Clear just for good measure
+					);
+				}
+			},
+			TaClk::A1 => {
+				if let Some(ref mut timer) = TIMER_A1_HANDLE.borrow(cs).borrow_mut().deref_mut() {
+					// Stop the timer for config
+					timer.tax_ctl.write(|w| w.mc().mc_0());
+					
+					timer.tax_ctl.modify(|_, w| w
+						.tassel().tassel_0()	// Use TA CLK as count source
+						.id().id_0()			// Use no divider
+						.taclr().set_bit()		// Clear just for good measure
+					);
+				}
+			},
+			TaClk::A2 => {
+				if let Some(ref mut timer) = TIMER_A2_HANDLE.borrow(cs).borrow_mut().deref_mut() {
+					// Stop the timer for config
+					timer.tax_ctl.write(|w| w.mc().mc_0());
+					
+					timer.tax_ctl.modify(|_, w| w
+						.tassel().tassel_0()	// Use TA CLK as count source
+						.id().id_0()			// Use no divider
+						.taclr().set_bit()		// Clear just for good measure
+					);
+				}
+			},
+			TaClk::A3 => {
+				if let Some(ref mut timer) = TIMER_A3_HANDLE.borrow(cs).borrow_mut().deref_mut() {
+					// Stop the timer for config
+					timer.tax_ctl.write(|w| w.mc().mc_0());
+					
+					timer.tax_ctl.modify(|_, w| w
+						.tassel().tassel_0()	// Use TA CLK as count source
+						.id().id_0()			// Use no divider
+						.taclr().set_bit()		// Clear just for good measure
+					);
+				}
+			},
+		}
+	})
+}
+
+#[allow(dead_code)]
+pub fn start(counter: &Counter, start: bool) {
+	free(|cs| {
+		match counter.taclk {
+			TaClk::A0 => {
+				if let Some(ref mut timer) = TIMER_A0_HANDLE.borrow(cs).borrow_mut().deref_mut() {
+					if start {
+						timer.tax_ctl.modify(|_, w| w.mc().mc_1());
+					}
+					else {
+						timer.tax_ctl.modify(|_, w| w.mc().mc_0());
+					}
+				}
+			},
+			TaClk::A1 => {
+				if let Some(ref mut timer) = TIMER_A1_HANDLE.borrow(cs).borrow_mut().deref_mut() {
+					if start {
+						timer.tax_ctl.modify(|_, w| w.mc().mc_1());
+					}
+					else {
+						timer.tax_ctl.modify(|_, w| w.mc().mc_0());
+					}
+				}
+			},
+			TaClk::A2 => {
+				if let Some(ref mut timer) = TIMER_A2_HANDLE.borrow(cs).borrow_mut().deref_mut() {
+					if start {
+						timer.tax_ctl.modify(|_, w| w.mc().mc_1());
+					}
+					else {
+						timer.tax_ctl.modify(|_, w| w.mc().mc_0());
+					}
+				}
+			},
+			TaClk::A3 => {
+				if let Some(ref mut timer) = TIMER_A3_HANDLE.borrow(cs).borrow_mut().deref_mut() {
+					if start {
+						timer.tax_ctl.modify(|_, w| w.mc().mc_1());
+					}
+					else {
+						timer.tax_ctl.modify(|_, w| w.mc().mc_0());
+					}
+				}
+			},
+		}
+	});
+}
+
+#[allow(dead_code)]
+pub fn get_count(counter: &Counter) -> u16 {
+	free(|cs| {
+		match counter.taclk {
+			TaClk::A0 => {
+				if let Some(ref mut timer) = TIMER_A0_HANDLE.borrow(cs).borrow_mut().deref_mut() {
+					timer.tax_ctl.modify(|_, w| w.mc().mc_0());
+					let read: u16 = timer.tax_r.read().bits();
+					timer.tax_ctl.modify(|_, w| w.mc().mc_1());
+					read					
+				}
+				else {
+					0
+				}
+			},
+			TaClk::A1 => {
+				if let Some(ref mut timer) = TIMER_A1_HANDLE.borrow(cs).borrow_mut().deref_mut() {
+					timer.tax_ctl.modify(|_, w| w.mc().mc_0());
+					let read: u16 = timer.tax_r.read().bits();
+					timer.tax_ctl.modify(|_, w| w.mc().mc_1());
+					read					
+				}
+				else {
+					0
+				}
+			},
+			TaClk::A2 => {
+				if let Some(ref mut timer) = TIMER_A2_HANDLE.borrow(cs).borrow_mut().deref_mut() {
+					timer.tax_ctl.modify(|_, w| w.mc().mc_0());
+					let read: u16 = timer.tax_r.read().bits();
+					timer.tax_ctl.modify(|_, w| w.mc().mc_1());
+					read					
+				}
+				else {
+					0
+				}
+			},
+			TaClk::A3 => {
+				if let Some(ref mut timer) = TIMER_A3_HANDLE.borrow(cs).borrow_mut().deref_mut() {
+					timer.tax_ctl.modify(|_, w| w.mc().mc_0());
+					let read: u16 = timer.tax_r.read().bits();
+					timer.tax_ctl.modify(|_, w| w.mc().mc_1());
+					read					
+				}
+				else {
+					0
+				}
+			},
+		}
+	})
 }
 
 //==============================================================================
