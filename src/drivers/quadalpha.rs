@@ -21,44 +21,44 @@ type QuadAlphaCharacter = (u8, u8);
 //==============================================================================
 #[allow(dead_code)]
 const CHARACTERS: [QuadAlphaCharacter; 38] = [
-	(0x60, 0x00),	// 1
+	(0x3F, 0x0C),	// 0
+	(0x06, 0x04),	// 1
 	(0xDB, 0x00),	// 2
-	(0xF1, 0x00),	// 3
-	(0x67, 0x00),	// 4
-	(0xB6, 0x04),	// 5
-	(0xBF, 0x00),	// 6
-	(0xE0, 0x00),	// 7
+	(0x8F, 0x00),	// 3
+	(0xE6, 0x00),	// 4
+	(0x69, 0x20),	// 5
+	(0xFD, 0x00),	// 6
+	(0x07, 0x00),	// 7
 	(0xFF, 0x00),	// 8
-	(0xF7, 0x00),	// 9
-	(0xFC, 0x30),	// 0
-	(0xEF, 0x00),	// A
-	(0xF9, 0x48),	// B
-	(0x9C, 0x00),	// C
-	(0xF0, 0x48),	// D
-	(0x9F, 0x00),	// E
-	(0x8E, 0x00),	// F
+	(0xEF, 0x00),	// 9
+	(0xF7, 0x00),	// A
+	(0x8F, 0x12),	// B
+	(0x39, 0x00),	// C
+	(0x0F, 0x12),	// D
+	(0x79, 0x00),	// E
+	(0x71, 0x00),	// F
 	(0xBD, 0x00),	// G
-	(0x6F, 0x00),	// H
-	(0x90, 0x48),	// I
-	(0x78, 0x00),	// J
-	(0x0E, 0x24),	// K
-	(0x1C, 0x00),	// L
-	(0x6C, 0xA0),	// M
-	(0x6C, 0x84),	// N
-	(0xFC, 0x00),	// O
-	(0xCF, 0x00),	// P
-	(0xFC, 0x04),	// Q
-	(0xCF, 0x04),	// R
-	(0xB7, 0x00),	// S
-	(0x80, 0x48),	// T
-	(0x7C, 0x00),	// U
-	(0x0C, 0x30),	// V
-	(0x6C, 0x14),	// W
-	(0x00, 0xB4),	// X
-	(0x00, 0xA8),	// Y
-	(0x90, 0x30),	// Z
-	(0x03, 0x00),	// -
-	(0x00, 0x00)	// ' '
+	(0xF6, 0x00),	// H
+	(0x09, 0x12),	// I
+	(0x1E, 0x00),	// J
+	(0x70, 0x24),	// K
+	(0x38, 0x00),	// L
+	(0x36, 0x05),	// M
+	(0x36, 0x21),	// N
+	(0x3F, 0x00),	// O
+	(0xF3, 0x00),	// P
+	(0x3F, 0x20),	// Q
+	(0xF3, 0x20),	// R
+	(0xED, 0x00),	// S
+	(0x01, 0x12),	// T
+	(0x3E, 0x00),	// U
+	(0x30, 0x0C),	// V
+	(0x36, 0x28),	// W
+	(0x00, 0x2D),	// X
+	(0xEE, 0x00),	// Y
+	(0x09, 0x0C),	// Z
+	(0xC0, 0x00),	// -
+	(0x00, 0x00),	// ' '
 ];
 
 #[allow(dead_code)]
@@ -88,11 +88,8 @@ const I2C: eusci::I2C = eusci::I2C {
 //==============================================================================
 pub fn init() {
 	eusci::i2c_init(&I2C);
-	if let Some(err) = eusci::i2c_write_block(&I2C, &[0x1, 0x2, 0x3, 0x4, 0x5], true) {
-		eusci::i2c_print_err(err);
-	}
-	// configure();
-	// write(&['1', '2', '3', '4']);
+	configure();
+	write(&['-', '-', '-', '-']);
 }
 
 //==============================================================================
@@ -108,16 +105,16 @@ fn configure() {
 #[allow(dead_code)]
 fn get_character(c: char) -> QuadAlphaCharacter {
 	match c {
-		'1' => CHARACTERS[0],
-		'2' => CHARACTERS[1],
-		'3' => CHARACTERS[2],
-		'4' => CHARACTERS[3],
-		'5' => CHARACTERS[4],
-		'6' => CHARACTERS[5],
-		'7' => CHARACTERS[6],
-		'8' => CHARACTERS[7],
-		'9' => CHARACTERS[8],
-		'0' => CHARACTERS[9],
+		'0' => CHARACTERS[0],
+		'1' => CHARACTERS[1],
+		'2' => CHARACTERS[2],
+		'3' => CHARACTERS[3],
+		'4' => CHARACTERS[4],
+		'5' => CHARACTERS[5],
+		'6' => CHARACTERS[6],
+		'7' => CHARACTERS[7],
+		'8' => CHARACTERS[8],
+		'9' => CHARACTERS[9],
 		'A' => CHARACTERS[10],
 		'B' => CHARACTERS[11],
 		'C' => CHARACTERS[12],
@@ -153,10 +150,14 @@ fn get_character(c: char) -> QuadAlphaCharacter {
 #[allow(dead_code)]
 fn get_int_address(send_stop: bool) -> u8 {
 	let data = QuadAlphaRegister::IntAddress as u8;
-	eusci::i2c_write_block(&I2C, &[data], false);
+	if let Some(err) = eusci::i2c_write_block(&I2C, &[data], false) {
+		eusci::i2c_print_err(err);
+	}
 	
 	let mut read: [u8; 1] = [0x0];
-	eusci::i2c_read_block(&I2C, &mut read, send_stop);
+	if let Some(err) = eusci::i2c_read_block(&I2C, &mut read, send_stop) {
+		eusci::i2c_print_err(err);
+	}
 	
 	read[0]
 }
@@ -164,10 +165,14 @@ fn get_int_address(send_stop: bool) -> u8 {
 #[allow(dead_code)]
 fn get_key_address(send_stop: bool) -> u8 {
 	let data = QuadAlphaRegister::KeyAddress as u8;
-	eusci::i2c_write_block(&I2C, &[data], false);
+	if let Some(err) = eusci::i2c_write_block(&I2C, &[data], false) {
+		eusci::i2c_print_err(err);
+	}
 	
 	let mut read: [u8; 1] = [0x0];
-	eusci::i2c_read_block(&I2C, &mut read, send_stop);
+	if let Some(err) = eusci::i2c_read_block(&I2C, &mut read, send_stop) {
+		eusci::i2c_print_err(err);
+	}
 	
 	read[0] & 0x07
 }
@@ -175,7 +180,9 @@ fn get_key_address(send_stop: bool) -> u8 {
 #[allow(dead_code)]
 fn set_display_address(address: u8, send_stop: bool) {
 	let data = QuadAlphaRegister::DisplayAddress as u8 | (address & 0x0F);
-	eusci::i2c_write_block(&I2C, &[data], send_stop);
+	if let Some(err) = eusci::i2c_write_block(&I2C, &[data], send_stop) {
+		eusci::i2c_print_err(err);
+	}
 }
 
 #[allow(dead_code)]
@@ -186,13 +193,17 @@ fn set_display_setup(blink: u8, status: bool, send_stop: bool) {
 	}
 	data |= (blink & 0x3) << 1;
 	
-	eusci::i2c_write_block(&I2C, &[data], send_stop);
+	if let Some(err) = eusci::i2c_write_block(&I2C, &[data], send_stop) {
+		eusci::i2c_print_err(err);
+	}
 }
 
 #[allow(dead_code)]
 fn set_dimming(dimming: u8, send_stop: bool) {
 	let data = QuadAlphaRegister::Dimming as u8 | (dimming & 0x0F);
-	eusci::i2c_write_block(&I2C, &[data], send_stop);
+	if let Some(err) = eusci::i2c_write_block(&I2C, &[data], send_stop) {
+		eusci::i2c_print_err(err);
+	}
 }
 
 #[allow(dead_code)]
@@ -205,7 +216,9 @@ fn set_row_int(row: bool, polarity: bool, send_stop: bool) {
 		data |= 0x1;
 	}
 		
-	eusci::i2c_write_block(&I2C, &[data], send_stop);
+	if let Some(err) = eusci::i2c_write_block(&I2C, &[data], send_stop) {
+		eusci::i2c_print_err(err);
+	}
 }
 
 #[allow(dead_code)]
@@ -217,7 +230,9 @@ fn set_system_setup(enable: bool, send_stop: bool) {
 		QuadAlphaRegister::SystemSetup as u8
 	};
 	
-	eusci::i2c_write_block(&I2C, &[data], send_stop);
+	if let Some(err) = eusci::i2c_write_block(&I2C, &[data], send_stop) {
+		eusci::i2c_print_err(err);
+	}
 }
 
 #[allow(dead_code)]
@@ -229,16 +244,19 @@ fn write(buf: &[char; 4]){
 		get_character(buf[3])
 	];
 	
-	set_display_address(0x0, false);
-	eusci::i2c_write_block(
+	// set_display_address(0x0, false);
+	if let Some(err) = eusci::i2c_write_block(
 		&I2C, &[
+			QuadAlphaRegister::DisplayAddress as u8, 
 			data[0].0, data[0].1,
 			data[1].0, data[1].1,
 			data[2].0, data[2].1,
 			data[3].0, data[3].1
 		],
 		true
-	);
+	) {
+		eusci::i2c_print_err(err);
+	}
 }
 
 //==============================================================================
