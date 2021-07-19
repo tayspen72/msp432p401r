@@ -10,9 +10,7 @@
 #![no_main]
 
 use cortex_m_rt::entry;
-use cortex_m_semihosting::hprintln;
-// use panic_halt as _; // Breakpoint on `rust_begin_unwind` to catch panics
-use panic_semihosting as _;
+use panic_halt as _;
 
 mod config;
 mod drivers;
@@ -33,7 +31,6 @@ mod mcu;
 //==============================================================================
 #[entry]
 fn main() -> ! {
-	hprintln!("Launching MSP432!").unwrap();
 	init();
 	
 	loop {

@@ -150,14 +150,10 @@ fn get_character(c: char) -> QuadAlphaCharacter {
 #[allow(dead_code)]
 fn get_int_address(send_stop: bool) -> u8 {
 	let data = QuadAlphaRegister::IntAddress as u8;
-	if let Some(err) = eusci::i2c_write_block(&I2C, &[data], false) {
-		eusci::i2c_print_err(err);
-	}
+	eusci::i2c_write_block(&I2C, &[data], false);
 	
 	let mut read: [u8; 1] = [0x0];
-	if let Some(err) = eusci::i2c_read_block(&I2C, &mut read, send_stop) {
-		eusci::i2c_print_err(err);
-	}
+	eusci::i2c_read_block(&I2C, &mut read, send_stop);
 	
 	read[0]
 }
@@ -165,14 +161,10 @@ fn get_int_address(send_stop: bool) -> u8 {
 #[allow(dead_code)]
 fn get_key_address(send_stop: bool) -> u8 {
 	let data = QuadAlphaRegister::KeyAddress as u8;
-	if let Some(err) = eusci::i2c_write_block(&I2C, &[data], false) {
-		eusci::i2c_print_err(err);
-	}
+	eusci::i2c_write_block(&I2C, &[data], false);
 	
 	let mut read: [u8; 1] = [0x0];
-	if let Some(err) = eusci::i2c_read_block(&I2C, &mut read, send_stop) {
-		eusci::i2c_print_err(err);
-	}
+	eusci::i2c_read_block(&I2C, &mut read, send_stop);
 	
 	read[0] & 0x07
 }
@@ -180,9 +172,7 @@ fn get_key_address(send_stop: bool) -> u8 {
 #[allow(dead_code)]
 fn set_display_address(address: u8, send_stop: bool) {
 	let data = QuadAlphaRegister::DisplayAddress as u8 | (address & 0x0F);
-	if let Some(err) = eusci::i2c_write_block(&I2C, &[data], send_stop) {
-		eusci::i2c_print_err(err);
-	}
+	eusci::i2c_write_block(&I2C, &[data], send_stop);
 }
 
 #[allow(dead_code)]
@@ -193,17 +183,13 @@ fn set_display_setup(blink: u8, status: bool, send_stop: bool) {
 	}
 	data |= (blink & 0x3) << 1;
 	
-	if let Some(err) = eusci::i2c_write_block(&I2C, &[data], send_stop) {
-		eusci::i2c_print_err(err);
-	}
+	eusci::i2c_write_block(&I2C, &[data], send_stop);
 }
 
 #[allow(dead_code)]
 fn set_dimming(dimming: u8, send_stop: bool) {
 	let data = QuadAlphaRegister::Dimming as u8 | (dimming & 0x0F);
-	if let Some(err) = eusci::i2c_write_block(&I2C, &[data], send_stop) {
-		eusci::i2c_print_err(err);
-	}
+	eusci::i2c_write_block(&I2C, &[data], send_stop);
 }
 
 #[allow(dead_code)]
@@ -216,9 +202,7 @@ fn set_row_int(row: bool, polarity: bool, send_stop: bool) {
 		data |= 0x1;
 	}
 		
-	if let Some(err) = eusci::i2c_write_block(&I2C, &[data], send_stop) {
-		eusci::i2c_print_err(err);
-	}
+	eusci::i2c_write_block(&I2C, &[data], send_stop);
 }
 
 #[allow(dead_code)]
@@ -230,9 +214,7 @@ fn set_system_setup(enable: bool, send_stop: bool) {
 		QuadAlphaRegister::SystemSetup as u8
 	};
 	
-	if let Some(err) = eusci::i2c_write_block(&I2C, &[data], send_stop) {
-		eusci::i2c_print_err(err);
-	}
+	eusci::i2c_write_block(&I2C, &[data], send_stop);
 }
 
 #[allow(dead_code)]
@@ -244,8 +226,7 @@ fn write(buf: &[char; 4]){
 		get_character(buf[3])
 	];
 	
-	// set_display_address(0x0, false);
-	if let Some(err) = eusci::i2c_write_block(
+	eusci::i2c_write_block(
 		&I2C, &[
 			QuadAlphaRegister::DisplayAddress as u8, 
 			data[0].0, data[0].1,
@@ -254,14 +235,9 @@ fn write(buf: &[char; 4]){
 			data[3].0, data[3].1
 		],
 		true
-	) {
-		eusci::i2c_print_err(err);
-	}
+	);
 }
 
 //==============================================================================
 // Task Handler
 //==============================================================================
-pub fn task_handler(){
-
-}

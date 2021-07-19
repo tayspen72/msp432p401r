@@ -10,7 +10,6 @@
 use core::cell::RefCell;
 use core::ops::DerefMut;
 use cortex_m::interrupt::{free, Mutex};
-use cortex_m_semihosting::hprintln;
 use crate::mcu;
 use msp432p401r_pac;
 
@@ -266,84 +265,6 @@ pub fn set_pin_function_select(config: &PinConfig, function: u8){
 			}
 		}
 	});
-}
-
-#[allow(dead_code)]
-pub fn print_in(port: mcu::Port) {
-	hprintln!("din{}: {}", port as u8, 
-		free(|cs|
-			if let Some(ref mut dio) = DIO_HANDLE.borrow(cs).borrow_mut().deref_mut() {
-				match port {
-					mcu::Port::Port1	=> dio.pain.read().p1in().bits(),
-					mcu::Port::Port2	=> dio.pain.read().p2in().bits(),
-					mcu::Port::Port3	=> dio.pbin.read().p3in().bits(),
-					mcu::Port::Port4	=> dio.pbin.read().p4in().bits(),
-					mcu::Port::Port5	=> dio.pcin.read().p5in().bits(),
-					mcu::Port::Port6	=> dio.pcin.read().p6in().bits(),
-					mcu::Port::Port7	=> dio.pdin.read().p7in().bits(),
-					mcu::Port::Port8	=> dio.pdin.read().p8in().bits(),
-					mcu::Port::Port9	=> dio.pein.read().p9in().bits(),
-					mcu::Port::Port10 	=> dio.pein.read().p10in().bits(),
-					mcu::Port::PortJ	=> (dio.pjin.read().pjin().bits() & 0xFF) as u8,
-				}
-			}
-			else {
-				0
-			}
-		)
-	).unwrap();	
-}
-
-#[allow(dead_code)]
-pub fn print_out(port: mcu::Port) {
-	hprintln!("dout{}: {}", port as u8, 
-		free(|cs|
-			if let Some(ref mut dio) = DIO_HANDLE.borrow(cs).borrow_mut().deref_mut() {
-				match port {
-					mcu::Port::Port1	=> dio.paout.read().p1out().bits(),
-					mcu::Port::Port2	=> dio.paout.read().p2out().bits(),
-					mcu::Port::Port3	=> dio.pbout.read().p3out().bits(),
-					mcu::Port::Port4	=> dio.pbout.read().p4out().bits(),
-					mcu::Port::Port5	=> dio.pcout.read().p5out().bits(),
-					mcu::Port::Port6	=> dio.pcout.read().p6out().bits(),
-					mcu::Port::Port7	=> dio.pdout.read().p7out().bits(),
-					mcu::Port::Port8	=> dio.pdout.read().p8out().bits(),
-					mcu::Port::Port9	=> dio.peout.read().p9out().bits(),
-					mcu::Port::Port10 	=> dio.peout.read().p10out().bits(),
-					mcu::Port::PortJ	=> (dio.pjout.read().pjout().bits() & 0xFF) as u8,
-				}
-			}
-			else {
-				0
-			}
-		)
-	).unwrap();	
-}
-
-#[allow(dead_code)]
-pub fn print_dir(port: mcu::Port) {
-	hprintln!("dir{}: {}", port as u8, 
-		free(|cs|
-			if let Some(ref mut dio) = DIO_HANDLE.borrow(cs).borrow_mut().deref_mut() {
-				match port {
-					mcu::Port::Port1	=> dio.padir.read().p1dir().bits(),
-					mcu::Port::Port2	=> dio.padir.read().p2dir().bits(),
-					mcu::Port::Port3	=> dio.pbdir.read().p3dir().bits(),
-					mcu::Port::Port4	=> dio.pbdir.read().p4dir().bits(),
-					mcu::Port::Port5	=> dio.pcdir.read().p5dir().bits(),
-					mcu::Port::Port6	=> dio.pcdir.read().p6dir().bits(),
-					mcu::Port::Port7	=> dio.pddir.read().p7dir().bits(),
-					mcu::Port::Port8	=> dio.pddir.read().p8dir().bits(),
-					mcu::Port::Port9	=> dio.pedir.read().p9dir().bits(),
-					mcu::Port::Port10 	=> dio.pedir.read().p10dir().bits(),
-					mcu::Port::PortJ	=> (dio.pjdir.read().pjdir().bits() & 0xFF) as u8,
-				}
-			}
-			else {
-				0
-			}
-		)
-	).unwrap();	
 }
 
 //==============================================================================
