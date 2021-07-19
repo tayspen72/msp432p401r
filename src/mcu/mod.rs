@@ -11,6 +11,7 @@ use msp432p401r_pac;
 
 use crate::config;
 
+pub mod counter;
 pub mod eusci;
 pub mod gpio;
 pub mod systick;
@@ -114,6 +115,12 @@ pub fn init() {
 	);
 	
 	// adc::init(peripherals.SAADC);
+	counter::init(
+		peripherals.TIMER_A0,
+		peripherals.TIMER_A1,
+		peripherals.TIMER_A2,
+		peripherals.TIMER_A3
+	);
 	gpio::init(peripherals.DIO);
 	// input::init(peripherals.GPIOTE);
 	// i2c::init(peripherals.TWI1);
