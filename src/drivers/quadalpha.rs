@@ -1,7 +1,7 @@
 //==============================================================================
 // Notes
 //==============================================================================
-// app/quadalpha.rs
+// drivers/quadalpha.rs
 // Quad-Alpha-Numeric Backpack from Adafruit
 // I2C Interface controlling (4) 14-segment digits
 

@@ -533,7 +533,6 @@ pub fn i2c_write_block(i2c: &I2C, data: &[u8], send_stop: bool) -> Option<I2CErr
 				}
 			},
 		}
-
 	})
 }
 
