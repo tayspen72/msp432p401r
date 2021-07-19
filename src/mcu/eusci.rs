@@ -184,9 +184,105 @@ pub fn i2c_init(i2c: &I2C){
 					eusci.ucbx_ctlw0.modify(|_, w| w.ucswrst().clear_bit());
 				}
 			},
-			EUSCI::B1 => (),
-			EUSCI::B2 => (),
-			EUSCI::B3 => (),
+			EUSCI::B1 => {
+				if let Some(ref mut eusci) = EUSCI_B1_HANDLE.borrow(cs).borrow_mut().deref_mut() {
+					// Assert SWRST bit during config
+					eusci.ucbx_ctlw0.write(|w| w.ucswrst().set_bit());
+					
+					eusci.ucbx_ctlw0.modify(|_, w| w
+						.ucssel().ucssel_2()
+						.ucsync().set_bit()
+						.ucmode().ucmode_3()
+						.ucmst().set_bit()
+						.ucmm().clear_bit()
+						.ucsla10().clear_bit()
+						.uca10().clear_bit()
+					);
+
+					// Determine baud rate values
+					let brw = mcu::get_system_clock().sm_clk / i2c.speed;
+					eusci.ucbx_brw.write(|w| unsafe { w.ucbr().bits(brw as u16) });
+					
+					// Assign the address
+					eusci.ucbx_i2csa.write(|w| unsafe { w.i2csa().bits(i2c.address as u16) });
+					
+					// Enable interrupt flag for transmit, receive, and nack
+					eusci.ucbx_ie.write(|w| w
+						.uctxie0().set_bit()
+						.ucrxie0().set_bit()
+						.ucnackie().set_bit()
+					);
+					
+					// Release the bit to use this config
+					eusci.ucbx_ctlw0.modify(|_, w| w.ucswrst().clear_bit());
+				}
+			},
+			EUSCI::B2 => {
+				if let Some(ref mut eusci) = EUSCI_B2_HANDLE.borrow(cs).borrow_mut().deref_mut() {
+					// Assert SWRST bit during config
+					eusci.ucbx_ctlw0.write(|w| w.ucswrst().set_bit());
+					
+					eusci.ucbx_ctlw0.modify(|_, w| w
+						.ucssel().ucssel_2()
+						.ucsync().set_bit()
+						.ucmode().ucmode_3()
+						.ucmst().set_bit()
+						.ucmm().clear_bit()
+						.ucsla10().clear_bit()
+						.uca10().clear_bit()
+					);
+
+					// Determine baud rate values
+					let brw = mcu::get_system_clock().sm_clk / i2c.speed;
+					eusci.ucbx_brw.write(|w| unsafe { w.ucbr().bits(brw as u16) });
+					
+					// Assign the address
+					eusci.ucbx_i2csa.write(|w| unsafe { w.i2csa().bits(i2c.address as u16) });
+					
+					// Enable interrupt flag for transmit, receive, and nack
+					eusci.ucbx_ie.write(|w| w
+						.uctxie0().set_bit()
+						.ucrxie0().set_bit()
+						.ucnackie().set_bit()
+					);
+					
+					// Release the bit to use this config
+					eusci.ucbx_ctlw0.modify(|_, w| w.ucswrst().clear_bit());
+				}
+			},
+			EUSCI::B3 => {
+				if let Some(ref mut eusci) = EUSCI_B3_HANDLE.borrow(cs).borrow_mut().deref_mut() {
+					// Assert SWRST bit during config
+					eusci.ucbx_ctlw0.write(|w| w.ucswrst().set_bit());
+					
+					eusci.ucbx_ctlw0.modify(|_, w| w
+						.ucssel().ucssel_2()
+						.ucsync().set_bit()
+						.ucmode().ucmode_3()
+						.ucmst().set_bit()
+						.ucmm().clear_bit()
+						.ucsla10().clear_bit()
+						.uca10().clear_bit()
+					);
+
+					// Determine baud rate values
+					let brw = mcu::get_system_clock().sm_clk / i2c.speed;
+					eusci.ucbx_brw.write(|w| unsafe { w.ucbr().bits(brw as u16) });
+					
+					// Assign the address
+					eusci.ucbx_i2csa.write(|w| unsafe { w.i2csa().bits(i2c.address as u16) });
+					
+					// Enable interrupt flag for transmit, receive, and nack
+					eusci.ucbx_ie.write(|w| w
+						.uctxie0().set_bit()
+						.ucrxie0().set_bit()
+						.ucnackie().set_bit()
+					);
+					
+					// Release the bit to use this config
+					eusci.ucbx_ctlw0.modify(|_, w| w.ucswrst().clear_bit());
+				}
+			},
 		}
 	});
 }
@@ -259,9 +355,183 @@ pub fn i2c_write_block(i2c: &I2C, data: &[u8], send_stop: bool) -> Option<I2CErr
 					Some(I2CError::BorrowFail)
 				}
 			},
-			EUSCI::B1 => None,
-			EUSCI::B2 => None,
-			EUSCI::B3 => None,
+			EUSCI::B1 => {
+				if let Some(ref mut eusci) = EUSCI_B1_HANDLE.borrow(cs).borrow_mut().deref_mut() {
+					// Set to transmitter mode and send start condition
+					eusci.ucbx_ctlw0.modify(|_, w| w
+						.uctr().set_bit()
+						.uctxstt().set_bit()
+					);
+
+					// Wait for bus to be ready for transmit
+					while eusci.ucbx_ctlw0.read().uctxstt().is_uctxstt_1() ||
+						eusci.ucbx_ifg.read().uctxifg0().is_uctxifg0_0() {}
+					
+					// If NACK, send stop and abort
+					if eusci.ucbx_ifg.read().ucnackifg().is_ucnackifg_1() {
+						eusci.ucbx_ctlw0.modify(|_, w| w.uctxstp().set_bit());
+						return Some(I2CError::AddressNack);
+					}
+
+					if let Some((last, buf)) = data.split_last() {
+						if !buf.is_empty() {
+							for byte in buf.into_iter() {
+								// Load byte into transmit buffer
+								eusci.ucbx_txbuf.write(|w| unsafe { w.uctxbuf().bits(*byte) });
+
+								// Wait for transmit
+								while eusci.ucbx_ifg.read().uctxifg0().is_uctxifg0_0() {}
+								
+								// If NACK, send stop and abort
+								if eusci.ucbx_ifg.read().ucnackifg().is_ucnackifg_1() {
+									eusci.ucbx_ctlw0.modify(|_, w| w.uctxstp().set_bit());
+									return Some(I2CError::DataNack);
+								}
+							}
+						}
+
+						// Send last byte
+						eusci.ucbx_txbuf.write(|w| unsafe { w.uctxbuf().bits(*last) });
+
+						// Wait for transmission to stop
+						while eusci.ucbx_ifg.read().uctxifg0().is_uctxifg0_0() {}
+
+						// Send stop condition on next transmission if needed
+						if send_stop {
+							eusci.ucbx_ctlw0.modify(|_, w| w.uctxstp().set_bit());
+						}
+						
+						// If NACK, send stop and abort
+						if eusci.ucbx_ifg.read().ucnackifg().is_ucnackifg_1() {
+							eusci.ucbx_ctlw0.modify(|_, w| w.uctxstp().set_bit());
+							return Some(I2CError::DataNack);
+						}
+					}
+					
+					None
+				}
+				else {
+					Some(I2CError::BorrowFail)
+				}
+			},
+			EUSCI::B2 => {
+				if let Some(ref mut eusci) = EUSCI_B2_HANDLE.borrow(cs).borrow_mut().deref_mut() {
+					// Set to transmitter mode and send start condition
+					eusci.ucbx_ctlw0.modify(|_, w| w
+						.uctr().set_bit()
+						.uctxstt().set_bit()
+					);
+
+					// Wait for bus to be ready for transmit
+					while eusci.ucbx_ctlw0.read().uctxstt().is_uctxstt_1() ||
+						eusci.ucbx_ifg.read().uctxifg0().is_uctxifg0_0() {}
+					
+					// If NACK, send stop and abort
+					if eusci.ucbx_ifg.read().ucnackifg().is_ucnackifg_1() {
+						eusci.ucbx_ctlw0.modify(|_, w| w.uctxstp().set_bit());
+						return Some(I2CError::AddressNack);
+					}
+
+					if let Some((last, buf)) = data.split_last() {
+						if !buf.is_empty() {
+							for byte in buf.into_iter() {
+								// Load byte into transmit buffer
+								eusci.ucbx_txbuf.write(|w| unsafe { w.uctxbuf().bits(*byte) });
+
+								// Wait for transmit
+								while eusci.ucbx_ifg.read().uctxifg0().is_uctxifg0_0() {}
+								
+								// If NACK, send stop and abort
+								if eusci.ucbx_ifg.read().ucnackifg().is_ucnackifg_1() {
+									eusci.ucbx_ctlw0.modify(|_, w| w.uctxstp().set_bit());
+									return Some(I2CError::DataNack);
+								}
+							}
+						}
+
+						// Send last byte
+						eusci.ucbx_txbuf.write(|w| unsafe { w.uctxbuf().bits(*last) });
+
+						// Wait for transmission to stop
+						while eusci.ucbx_ifg.read().uctxifg0().is_uctxifg0_0() {}
+
+						// Send stop condition on next transmission if needed
+						if send_stop {
+							eusci.ucbx_ctlw0.modify(|_, w| w.uctxstp().set_bit());
+						}
+						
+						// If NACK, send stop and abort
+						if eusci.ucbx_ifg.read().ucnackifg().is_ucnackifg_1() {
+							eusci.ucbx_ctlw0.modify(|_, w| w.uctxstp().set_bit());
+							return Some(I2CError::DataNack);
+						}
+					}
+					
+					None
+				}
+				else {
+					Some(I2CError::BorrowFail)
+				}
+			},
+			EUSCI::B3 => {
+				if let Some(ref mut eusci) = EUSCI_B3_HANDLE.borrow(cs).borrow_mut().deref_mut() {
+					// Set to transmitter mode and send start condition
+					eusci.ucbx_ctlw0.modify(|_, w| w
+						.uctr().set_bit()
+						.uctxstt().set_bit()
+					);
+
+					// Wait for bus to be ready for transmit
+					while eusci.ucbx_ctlw0.read().uctxstt().is_uctxstt_1() ||
+						eusci.ucbx_ifg.read().uctxifg0().is_uctxifg0_0() {}
+					
+					// If NACK, send stop and abort
+					if eusci.ucbx_ifg.read().ucnackifg().is_ucnackifg_1() {
+						eusci.ucbx_ctlw0.modify(|_, w| w.uctxstp().set_bit());
+						return Some(I2CError::AddressNack);
+					}
+
+					if let Some((last, buf)) = data.split_last() {
+						if !buf.is_empty() {
+							for byte in buf.into_iter() {
+								// Load byte into transmit buffer
+								eusci.ucbx_txbuf.write(|w| unsafe { w.uctxbuf().bits(*byte) });
+
+								// Wait for transmit
+								while eusci.ucbx_ifg.read().uctxifg0().is_uctxifg0_0() {}
+								
+								// If NACK, send stop and abort
+								if eusci.ucbx_ifg.read().ucnackifg().is_ucnackifg_1() {
+									eusci.ucbx_ctlw0.modify(|_, w| w.uctxstp().set_bit());
+									return Some(I2CError::DataNack);
+								}
+							}
+						}
+
+						// Send last byte
+						eusci.ucbx_txbuf.write(|w| unsafe { w.uctxbuf().bits(*last) });
+
+						// Wait for transmission to stop
+						while eusci.ucbx_ifg.read().uctxifg0().is_uctxifg0_0() {}
+
+						// Send stop condition on next transmission if needed
+						if send_stop {
+							eusci.ucbx_ctlw0.modify(|_, w| w.uctxstp().set_bit());
+						}
+						
+						// If NACK, send stop and abort
+						if eusci.ucbx_ifg.read().ucnackifg().is_ucnackifg_1() {
+							eusci.ucbx_ctlw0.modify(|_, w| w.uctxstp().set_bit());
+							return Some(I2CError::DataNack);
+						}
+					}
+					
+					None
+				}
+				else {
+					Some(I2CError::BorrowFail)
+				}
+			},
 		}
 
 	})
