@@ -170,6 +170,9 @@ pub fn i2c_init(i2c: &I2C){
 					let brw = mcu::get_system_clock().sm_clk / i2c.speed;
 					eusci.ucbx_brw.write(|w| unsafe { w.ucbr().bits(brw as u16) });
 					
+					// Assign the address
+					eusci.ucbx_i2csa.write(|w| unsafe { w.i2csa().bits(i2c.address as u16) });
+					
 					// Enable interrupt flag for transmit, receive, and nack
 					eusci.ucbx_ie.write(|w| w
 						.uctxie0().set_bit()
@@ -178,7 +181,7 @@ pub fn i2c_init(i2c: &I2C){
 					);
 					
 					// Release the bit to use this config
-					eusci.ucbx_ctlw0.modify(|_, w| w.ucswrst().set_bit());
+					eusci.ucbx_ctlw0.modify(|_, w| w.ucswrst().clear_bit());
 				}
 			},
 			EUSCI::B1 => (),
@@ -188,6 +191,7 @@ pub fn i2c_init(i2c: &I2C){
 	});
 }
 
+#[allow(dead_code)]
 pub fn i2c_print_err(err: I2CError) {
 	hprintln!("I2c Error: {:?}", err).unwrap();
 }
@@ -263,8 +267,8 @@ pub fn i2c_write_block(i2c: &I2C, data: &[u8], send_stop: bool) -> Option<I2CErr
 	})
 }
 
-pub fn i2c_read_block(_i2c: &I2C, _data: &[u8], _send_stop: bool){
-
+pub fn i2c_read_block(_i2c: &I2C, _data: &[u8], _send_stop: bool) -> Option<I2CError> {
+	Some(I2CError::Unknown)
 }
 
 //==============================================================================
