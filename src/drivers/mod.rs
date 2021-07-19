@@ -44,5 +44,6 @@ pub fn init() {
 pub fn task_handler(info: &mut app::Info) {
 	fuel::task_handler(info);
 	odometer::task_handler(info);
+	quadalpha::task_handler(info);
 	speedometer::task_handler(info);
 }

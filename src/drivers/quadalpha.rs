@@ -8,7 +8,7 @@
 //==============================================================================
 // Crates and Mods
 //==============================================================================
-use crate::config;
+use crate::{app, config};
 use crate::mcu::eusci;
 
 //==============================================================================
@@ -89,7 +89,7 @@ const I2C: eusci::I2C = eusci::I2C {
 pub fn init() {
 	eusci::i2c_init(&I2C);
 	configure();
-	write(&['-', '-', '-', '-']);
+	write(&['-', '-', '-', '-'], false);
 }
 
 //==============================================================================
@@ -145,6 +145,24 @@ fn get_character(c: char) -> QuadAlphaCharacter {
 		' ' => CHARACTERS[37],
 		_ => (0, 0)
 	}
+}
+
+fn get_digits(mut value: u16) -> [char; 4] {
+	let mut digits: [char; 4] = [ ' ', ' ', ' ', ' '];
+
+	if value > 10000 {
+		value = value % 10000;
+	}
+
+	let mut divider = 1000;
+	for i in 0..4 {
+		if value > divider || i == 3{
+			digits[i] = (((value / divider) % 10) as u8) as char;
+		}
+		divider = divider / 10;
+	}
+	
+	digits
 }
 
 #[allow(dead_code)]
@@ -218,14 +236,18 @@ fn set_system_setup(enable: bool, send_stop: bool) {
 }
 
 #[allow(dead_code)]
-fn write(buf: &[char; 4]){
-	let data = [
+fn write(buf: &[char; 4], decimal: bool){
+	let mut data = [
 		get_character(buf[0]), 
 		get_character(buf[1]), 
 		get_character(buf[2]), 
 		get_character(buf[3])
 	];
 	
+	if decimal {
+		data[2].1 = data[2].1 | 0x1;
+	}
+
 	eusci::i2c_write_block(
 		&I2C, &[
 			QuadAlphaRegister::DisplayAddress as u8, 
@@ -241,3 +263,9 @@ fn write(buf: &[char; 4]){
 //==============================================================================
 // Task Handler
 //==============================================================================
+pub fn task_handler(info: &mut app::Info) {
+	if info.change_flags.speed {
+		let digits: [char; 4] = get_digits(info.speed);
+		write(&digits, true);
+	}
+}
