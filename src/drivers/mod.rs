@@ -6,8 +6,12 @@
 //==============================================================================
 // Crates and Mods
 //==============================================================================
+pub mod fuel;
+pub mod odometer;
 pub mod quadalpha;
 pub mod speedometer;
+
+use crate::app;
 
 //==============================================================================
 // Enums, Structs, and Types
@@ -23,6 +27,8 @@ pub mod speedometer;
 // Public Functions
 //==============================================================================
 pub fn init() {
+	fuel::init();
+	odometer::init();
 	quadalpha::init();
 	speedometer::init();
 }
@@ -35,7 +41,8 @@ pub fn init() {
 //==============================================================================
 // Task Handler
 //==============================================================================
-pub fn task_handler() {
-	quadalpha::task_handler();
-	speedometer::task_handler();
+pub fn task_handler(info: &mut app::Info) {
+	fuel::task_handler(info);
+	odometer::task_handler(info);
+	speedometer::task_handler(info);
 }

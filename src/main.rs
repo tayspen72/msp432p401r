@@ -12,6 +12,7 @@
 use cortex_m_rt::entry;
 use panic_halt as _;
 
+mod app;
 mod config;
 mod drivers;
 mod mcu;
@@ -33,8 +34,10 @@ mod mcu;
 fn main() -> ! {
 	init();
 	
+	let mut info = app::Info::take().unwrap();
+
 	loop {
-		task_handler();
+		task_handler(&mut info);
 	}
 }
 
@@ -49,7 +52,8 @@ fn init() {
 //==============================================================================
 // Task Handler
 //==============================================================================
-fn task_handler() {
+fn task_handler(info: &mut app::Info) {
 	mcu::task_handler();
-	drivers::task_handler();
+	drivers::task_handler(info);
+	app::task_handler(info);
 }
