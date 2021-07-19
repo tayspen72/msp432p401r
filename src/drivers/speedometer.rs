@@ -7,8 +7,7 @@
 //==============================================================================
 // Crates and Mods
 //==============================================================================
-use crate::config;
-use crate::mcu::counter;
+use crate::mcu::{counter, systick};
 
 //==============================================================================
 // Enums, Structs, and Types
@@ -24,6 +23,8 @@ const COUNTER: counter::Counter = counter::Counter {
 	taclk: config::COUNTER_TACLK,
 	function_select: config::COUNTER_FUNCTION_SELECT
 };
+
+const UPDATE_FREQUENCY: u32 = 25;	// Update (25/100)x per second
 
 //==============================================================================
 // Public Functions
@@ -41,6 +42,11 @@ pub fn init() {
 //==============================================================================
 // Task Handler
 //==============================================================================
-pub fn task_handler(){
-
+	static mut LAST_TIME: u32 = 0;
+	unsafe { 
+		if systick::get_diff(LAST_TIME) > UPDATE_FREQUENCY {
+			LAST_TIME = systick::get_time();
+			counter::get_count(&COUNTER);
+		}
+	}
 }
