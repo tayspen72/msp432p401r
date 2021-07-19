@@ -65,12 +65,12 @@ fn configure (systick: &mut cortex_m::peripheral::SYST) {
 	// Set the systick clock source
 	systick.set_clock_source(cortex_m::peripheral::syst::SystClkSource::Core);
 	
-	// Core should be running at 24MHz - div by 100, fire every 10ms
-	systick.set_reload(240_000);
+	// Core should be running at 48MHz - fire at 100Hz
+	systick.set_reload(480_000);
 	
 	systick.clear_current();
 	systick.enable_counter();
-	systick.enable_interrupt();	
+	systick.enable_interrupt();
 }
 
 //==============================================================================
