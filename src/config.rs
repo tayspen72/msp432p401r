@@ -24,10 +24,10 @@ use crate::mcu::{eusci, counter};
 //==============================================================================
 // Counter
 //==============================================================================
-#[allow(dead_code)] pub const COUNTER_TACLK_PORT: mcu::Port = mcu::Port::Port7;
-#[allow(dead_code)] pub const COUNTER_TACLK_PIN: u8 = 1;
-#[allow(dead_code)] pub const COUNTER_TACLK: counter::TaClk = counter::TaClk::A0;
-#[allow(dead_code)] pub const COUNTER_FUNCTION_SELECT: u8 = 0b01;
+#[allow(dead_code)] pub const COUNTER_TACLK_PORT: mcu::Port = mcu::Port::Port4;
+#[allow(dead_code)] pub const COUNTER_TACLK_PIN: u8 = 2;
+#[allow(dead_code)] pub const COUNTER_TACLK: counter::TaClk = counter::TaClk::A2;
+#[allow(dead_code)] pub const COUNTER_FUNCTION_SELECT: u8 = 0b10;
 
 //==============================================================================
 // Debug
