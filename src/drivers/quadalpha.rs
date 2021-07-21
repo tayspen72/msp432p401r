@@ -157,7 +157,7 @@ fn get_digits(mut value: u16) -> [char; 4] {
 	let mut divider = 1000;
 	for i in 0..4 {
 		if value > divider || i == 3{
-			digits[i] = (((value / divider) % 10) as u8) as char;
+			digits[i] = (((value / divider) % 10) as u8 + 0x30) as char;
 		}
 		divider = divider / 10;
 	}
@@ -245,7 +245,7 @@ fn write(buf: &[char; 4], decimal: bool){
 	];
 	
 	if decimal {
-		data[2].1 = data[2].1 | 0x1;
+		data[2].1 = data[2].1 | 0x40;
 	}
 
 	eusci::i2c_write_block(
