@@ -78,16 +78,16 @@ pub fn setup(counter: &Counter) {
 	gpio::pin_setup(&gpio::PinConfig {
 		port: counter.taclk_port,
 		pin: counter.taclk_pin,
-		direction: gpio::PinDirection::Output,
-		pull: gpio::PinPull::PullDisabled,
+		direction: gpio::PinDirection::Input,
+		pull: gpio::PinPull::PullUp,
 		state: gpio::PinState::PinHigh
 	});
 	gpio::set_pin_function_select(
 		&gpio::PinConfig {
 			port: counter.taclk_port,
 			pin: counter.taclk_pin,
-			direction: gpio::PinDirection::Output,
-			pull: gpio::PinPull::PullDisabled,
+			direction: gpio::PinDirection::Input,
+			pull: gpio::PinPull::PullUp,
 			state: gpio::PinState::PinHigh
 		},
 		counter.function_select
@@ -154,7 +154,7 @@ pub fn start(counter: &Counter, start: bool) {
 			TaClk::A0 => {
 				if let Some(ref mut timer) = TIMER_A0_HANDLE.borrow(cs).borrow_mut().deref_mut() {
 					if start {
-						timer.tax_ctl.modify(|_, w| w.mc().mc_1());
+						timer.tax_ctl.modify(|_, w| w.mc().mc_2());
 					}
 					else {
 						timer.tax_ctl.modify(|_, w| w.mc().mc_0());
@@ -164,7 +164,7 @@ pub fn start(counter: &Counter, start: bool) {
 			TaClk::A1 => {
 				if let Some(ref mut timer) = TIMER_A1_HANDLE.borrow(cs).borrow_mut().deref_mut() {
 					if start {
-						timer.tax_ctl.modify(|_, w| w.mc().mc_1());
+						timer.tax_ctl.modify(|_, w| w.mc().mc_2());
 					}
 					else {
 						timer.tax_ctl.modify(|_, w| w.mc().mc_0());
@@ -174,7 +174,7 @@ pub fn start(counter: &Counter, start: bool) {
 			TaClk::A2 => {
 				if let Some(ref mut timer) = TIMER_A2_HANDLE.borrow(cs).borrow_mut().deref_mut() {
 					if start {
-						timer.tax_ctl.modify(|_, w| w.mc().mc_1());
+						timer.tax_ctl.modify(|_, w| w.mc().mc_2());
 					}
 					else {
 						timer.tax_ctl.modify(|_, w| w.mc().mc_0());
@@ -184,7 +184,7 @@ pub fn start(counter: &Counter, start: bool) {
 			TaClk::A3 => {
 				if let Some(ref mut timer) = TIMER_A3_HANDLE.borrow(cs).borrow_mut().deref_mut() {
 					if start {
-						timer.tax_ctl.modify(|_, w| w.mc().mc_1());
+						timer.tax_ctl.modify(|_, w| w.mc().mc_2());
 					}
 					else {
 						timer.tax_ctl.modify(|_, w| w.mc().mc_0());
@@ -203,8 +203,8 @@ pub fn get_count(counter: &Counter) -> u16 {
 				if let Some(ref mut timer) = TIMER_A0_HANDLE.borrow(cs).borrow_mut().deref_mut() {
 					timer.tax_ctl.modify(|_, w| w.mc().mc_0());
 					let read: u16 = timer.tax_r.read().bits();
-					timer.tax_ctl.modify(|_, w| w.mc().mc_1());
-					read					
+					timer.tax_ctl.modify(|_, w| w.mc().mc_2().taclr().set_bit());
+					read
 				}
 				else {
 					0
@@ -214,8 +214,8 @@ pub fn get_count(counter: &Counter) -> u16 {
 				if let Some(ref mut timer) = TIMER_A1_HANDLE.borrow(cs).borrow_mut().deref_mut() {
 					timer.tax_ctl.modify(|_, w| w.mc().mc_0());
 					let read: u16 = timer.tax_r.read().bits();
-					timer.tax_ctl.modify(|_, w| w.mc().mc_1());
-					read					
+					timer.tax_ctl.modify(|_, w| w.mc().mc_2().taclr().set_bit());
+					read
 				}
 				else {
 					0
@@ -225,8 +225,8 @@ pub fn get_count(counter: &Counter) -> u16 {
 				if let Some(ref mut timer) = TIMER_A2_HANDLE.borrow(cs).borrow_mut().deref_mut() {
 					timer.tax_ctl.modify(|_, w| w.mc().mc_0());
 					let read: u16 = timer.tax_r.read().bits();
-					timer.tax_ctl.modify(|_, w| w.mc().mc_1());
-					read					
+					timer.tax_ctl.modify(|_, w| w.mc().mc_2().taclr().set_bit());
+					read
 				}
 				else {
 					0
@@ -236,8 +236,8 @@ pub fn get_count(counter: &Counter) -> u16 {
 				if let Some(ref mut timer) = TIMER_A3_HANDLE.borrow(cs).borrow_mut().deref_mut() {
 					timer.tax_ctl.modify(|_, w| w.mc().mc_0());
 					let read: u16 = timer.tax_r.read().bits();
-					timer.tax_ctl.modify(|_, w| w.mc().mc_1());
-					read					
+					timer.tax_ctl.modify(|_, w| w.mc().mc_2().taclr().set_bit());
+					read
 				}
 				else {
 					0
