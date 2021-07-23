@@ -11,9 +11,11 @@ use msp432p401r_pac;
 
 use crate::config;
 
+pub mod adc;
 pub mod counter;
 pub mod eusci;
 pub mod gpio;
+pub mod rtc;
 pub mod systick;
 pub mod wdt;
 
