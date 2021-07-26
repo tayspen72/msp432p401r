@@ -52,12 +52,12 @@ pub enum Resolution{
 #[allow(dead_code)]
 #[derive(Copy, Clone, PartialEq)]
 pub struct Adc{
-	port: mcu::Port,
-	pin: u8,
-	channel: Channel,
-	signal: u8,
-	function_select: u8,
-	resolution: Resolution,
+	pub port: mcu::Port,
+	pub pin: u8,
+	pub channel: Channel,
+	pub signal: u8,
+	pub function_select: u8,
+	pub resolution: Resolution,
 
 }
 
