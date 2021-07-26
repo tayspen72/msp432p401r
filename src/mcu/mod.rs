@@ -52,7 +52,8 @@ pub enum Port{
 	Port8,
 	Port9,
 	Port10,
-	PortJ
+	PortJ,
+	PortDisabled
 }
 
 const HFXT_CLK_IN: gpio::PinConfig = gpio::PinConfig {

@@ -92,6 +92,7 @@ pub fn get_pin_state(config: &PinConfig) -> PinState {
 				mcu::Port::Port9  => dio.pein.read().p9in().bits(),
 				mcu::Port::Port10 => dio.pein.read().p10in().bits(),
 				mcu::Port::PortJ  => (dio.pjin.read().pjin().bits() & 0xFF) as u8,
+				mcu::Port::PortDisabled => 0,
 			}
 		}
 		else {
@@ -135,7 +136,8 @@ pub fn pin_setup(config: &PinConfig){
 					mcu::Port::Port8 =>  dio.pddir.modify(|r, w| unsafe { w.p8dir().bits(r.p8dir().bits()   & !(1 << config.pin)) }),
 					mcu::Port::Port9 =>  dio.pedir.modify(|r, w| unsafe { w.p9dir().bits(r.p9dir().bits()   & !(1 << config.pin)) }),
 					mcu::Port::Port10 => dio.pedir.modify(|r, w| unsafe { w.p10dir().bits(r.p10dir().bits() & !(1 << config.pin)) }),
-					mcu::Port::PortJ =>  dio.pjdir.modify(|r, w| unsafe { w.pjdir().bits(r.pjdir().bits()   & !(1 << config.pin)) })
+					mcu::Port::PortJ =>  dio.pjdir.modify(|r, w| unsafe { w.pjdir().bits(r.pjdir().bits()   & !(1 << config.pin)) }),
+					mcu::Port::PortDisabled => (),
 				}
 
 				// Set pin pull as needed
@@ -151,7 +153,8 @@ pub fn pin_setup(config: &PinConfig){
 					mcu::Port::Port8 =>  dio.pdren.modify(|r, w| unsafe { w.p8ren().bits(r.p8ren().bits()   & !(1 << config.pin) | (pull << config.pin)) }),
 					mcu::Port::Port9 =>  dio.peren.modify(|r, w| unsafe { w.p9ren().bits(r.p9ren().bits()   & !(1 << config.pin) | (pull << config.pin)) }),
 					mcu::Port::Port10 => dio.peren.modify(|r, w| unsafe { w.p10ren().bits(r.p10ren().bits() & !(1 << config.pin) | (pull << config.pin)) }),
-					mcu::Port::PortJ =>  dio.pjren.modify(|r, w| unsafe { w.pjren().bits(r.pjren().bits()   & !(1 << config.pin) | ((pull as u16) << config.pin)) })
+					mcu::Port::PortJ =>  dio.pjren.modify(|r, w| unsafe { w.pjren().bits(r.pjren().bits()   & !(1 << config.pin) | ((pull as u16) << config.pin)) }),
+					mcu::Port::PortDisabled => (),
 				}
 
 				// Set the pull state based on the otuput register value
@@ -170,7 +173,8 @@ pub fn pin_setup(config: &PinConfig){
 					mcu::Port::Port8 =>  dio.pddir.modify(|r, w| unsafe { w.p8dir().bits(r.p8dir().bits()   | (1 << config.pin)) }),
 					mcu::Port::Port9 =>  dio.pedir.modify(|r, w| unsafe { w.p9dir().bits(r.p9dir().bits()   | (1 << config.pin)) }),
 					mcu::Port::Port10 => dio.pedir.modify(|r, w| unsafe { w.p10dir().bits(r.p10dir().bits() | (1 << config.pin)) }),
-					mcu::Port::PortJ =>  dio.pjdir.modify(|r, w| unsafe { w.pjdir().bits(r.pjdir().bits()   | (1 << config.pin)) })
+					mcu::Port::PortJ =>  dio.pjdir.modify(|r, w| unsafe { w.pjdir().bits(r.pjdir().bits()   | (1 << config.pin)) }),
+					mcu::Port::PortDisabled => (),
 				}
 			}
 		}
@@ -200,7 +204,8 @@ pub fn set_pin_state(config: &PinConfig, state: PinState){
 				mcu::Port::Port8 =>  dio.pdout.modify(|r, w| unsafe { w.p8out().bits(r.p8out().bits()   & !(1 << config.pin) | (out << config.pin)) }),
 				mcu::Port::Port9 =>  dio.peout.modify(|r, w| unsafe { w.p9out().bits(r.p9out().bits()   & !(1 << config.pin) | (out << config.pin)) }),
 				mcu::Port::Port10 => dio.peout.modify(|r, w| unsafe { w.p10out().bits(r.p10out().bits() & !(1 << config.pin) | (out << config.pin)) }),
-				mcu::Port::PortJ =>  dio.pjout.modify(|r, w| unsafe { w.pjout().bits(r.pjout().bits()   & !(1 << config.pin) | ((out as u16) << config.pin)) })
+				mcu::Port::PortJ =>  dio.pjout.modify(|r, w| unsafe { w.pjout().bits(r.pjout().bits()   & !(1 << config.pin) | ((out as u16) << config.pin)) }),
+				mcu::Port::PortDisabled => (),
 			}
 		}
 	});
@@ -262,6 +267,7 @@ pub fn set_pin_function_select(config: &PinConfig, function: u8){
 					dio.pjsel0.modify(|r, w| unsafe { w.pjsel0().bits(r.pjsel0().bits()   & !(1 << config.pin) | ((sel0 as u16 ) << config.pin)) });
 					dio.pjsel1.modify(|r, w| unsafe { w.pjsel1().bits(r.pjsel1().bits()   & !(1 << config.pin) | ((sel1 as u16 ) << config.pin)) });
 				},
+				mcu::Port::PortDisabled => (),
 			}
 		}
 	});
