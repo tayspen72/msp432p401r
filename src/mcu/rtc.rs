@@ -8,10 +8,10 @@
 // Crates and Mods
 //==============================================================================
 use core::cell::RefCell;
-use core::ops::DerefMut;
+// use core::ops::DerefMut;
 use cortex_m::interrupt::{free, Mutex};
-use crate::mcu;
-use crate::mcu::gpio;
+// use crate::mcu;
+// use crate::mcu::gpio;
 use msp432p401r_pac;
 
 //==============================================================================
