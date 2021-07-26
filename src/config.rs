@@ -7,7 +7,16 @@
 // Crates and Mods
 //==============================================================================
 use crate::mcu;
-use crate::mcu::{eusci, counter};
+use crate::mcu::{adc, counter, eusci};
+
+//==============================================================================
+// ADC
+//==============================================================================
+#[allow(dead_code)] pub const ADC_PORT: mcu::Port = mcu::Port::Port5;
+#[allow(dead_code)] pub const ADC_PIN: u8 = 5;
+#[allow(dead_code)] pub const ADC_CHANNEL: adc::Channel = adc::Channel::Channel0;
+#[allow(dead_code)] pub const ADC_SIGNAL: u8 = 0;
+#[allow(dead_code)] pub const ADC_FUNCTION_SELECT: u8 = 0b11;
 
 //==============================================================================
 // Clock
@@ -100,6 +109,15 @@ use crate::mcu::{eusci, counter};
 // SPI
 //==============================================================================
 
+
+//==============================================================================
+// Temperature Sensor
+//==============================================================================
+#[allow(dead_code)] pub const TEMPERATURE_ADC_PORT: mcu::Port = mcu::Port::PortDisabled;
+#[allow(dead_code)] pub const TEMPERATURE_ADC_PIN: u8 = 0;
+#[allow(dead_code)] pub const TEMPERATURE_ADC_CHANNEL: adc::Channel = adc::Channel::Temperature;
+#[allow(dead_code)] pub const TEMPERATURE_ADC_SIGNAL: u8 = 0;
+#[allow(dead_code)] pub const TEMPERATURE_ADC_FUNCTION_SELECT: u8 = 0b11;
 
 //==============================================================================
 // Uart
