@@ -71,44 +71,4 @@ pub fn task_handler(info: &mut app::Info){
 			}
 		}
 	}
-	
-	static mut LAST: bool = true;
-	static mut TOGGLE_TIME: u32 = 0;
-	
-	unsafe { 
-		if systick::get_diff(TOGGLE_TIME) < 1 {
-			return;
-		}
-		
-		TOGGLE_TIME = systick::get_time();
-	}
-	
-	unsafe { 
-		if LAST {
-			gpio::set_pin_state(
-				&gpio::PinConfig {
-					port: mcu::Port::Port2,
-					pin: 5,
-					direction: gpio::PinDirection::Output,
-					pull: gpio::PinPull::PullDisabled,
-					state: gpio::PinState::PinHigh,
-				},
-				gpio::PinState::PinLow
-			);
-			LAST = false;
-		}
-		else {
-			gpio::set_pin_state(
-				&gpio::PinConfig {
-					port: mcu::Port::Port2,
-					pin: 5,
-					direction: gpio::PinDirection::Output,
-					pull: gpio::PinPull::PullDisabled,
-					state: gpio::PinState::PinHigh,
-				},
-				gpio::PinState::PinHigh
-			);
-			LAST = true;
-		}
-	}
 }
