@@ -125,7 +125,7 @@ pub fn configure(adc: &Adc) {
 				.adc14pdiv().adc14pdiv_0()
 				.adc14shs().bits(TriggerSource::Software as u8)
 				.adc14div().adc14div_0()
-				.adc14ssel().adc14ssel_2()
+				.adc14ssel().adc14ssel_4()
 				.adc14conseq().adc14conseq_0()
 				.adc14on().adc14on_1()
 				.adc14enc().clear_bit()
@@ -155,33 +155,38 @@ pub fn read(adc: &Adc) -> u16 {
 	free(|cs| {
 		if let Some(ref mut adc14) = ADC_HANDLE.borrow(cs).borrow_mut().deref_mut() {
 			// Assign object config
-			adc14.adc14ctl1.write(|w| w
+			adc14.adc14ctl1.write(|w| unsafe { w
 				.adc14ch3map().bit(adc.channel == Channel::Channel3)
 				.adc14ch2map().bit(adc.channel == Channel::Channel2)
 				.adc14ch1map().bit(adc.channel == Channel::Channel1)
 				.adc14ch0map().bit(adc.channel == Channel::Channel0)
 				.adc14tcmap().bit(adc.channel == Channel::Temperature)
+				.adc14cstartadd().bits(adc.channel as u8)
 				.adc14res().bits(adc.resolution as u8)
 				.adc14df().clear_bit()
 				.adc14refburst().set_bit()
 				.adc14pwrmd().adc14pwrmd_0()
-			);
+			} );
 
 			let channel: usize = adc.channel as usize;
 			adc14.adc14mctl[channel].write(|w| w
 				.adc14dif().clear_bit()
 				.adc14vrsel().adc14vrsel_0()
+				.adc14eos().set_bit()
 				.adc14inch().bits(adc.signal)
 			);
 
-			// Enable and start read
+			// Clear the conversion flag before starting
+			adc14.adc14clrifgr0.write(|w| unsafe { w.bits(1<< adc.channel as u8) });
+
+			// Set software trigger to start read
 			adc14.adc14ctl0.modify(|_, w| w
-				.adc14enc().set_bit()
 				.adc14sc().set_bit()
 			);
-
+			
 			// Wait for config to finish
 			while adc14.adc14ifgr0.read().bits() & (1 << adc.channel as u8) == 0 {}
+			// while adc14.adc14ctl0.read().adc14busy().bit() {}
 
 			adc14.adc14mem[adc.channel as usize].read().conversion_results().bits()
 		}
