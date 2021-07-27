@@ -49,8 +49,7 @@ use crate::mcu::{adc, counter, eusci};
 //==============================================================================
 #[allow(dead_code)] pub const FUEL_ADC_PORT: mcu::Port = mcu::Port::Port5;
 #[allow(dead_code)] pub const FUEL_ADC_PIN: u8 = 5;
-#[allow(dead_code)] pub const FUEL_ADC_CHANNEL: adc::Channel = adc::Channel::Channel0;
-#[allow(dead_code)] pub const FUEL_ADC_SIGNAL: u8 = 0;
+#[allow(dead_code)] pub const FUEL_ADC_CHANNEL: adc::Channel = adc::Channel::A0;
 #[allow(dead_code)] pub const FUEL_ADC_FUNCTION_SELECT: u8 = 0b11;
 
 //==============================================================================

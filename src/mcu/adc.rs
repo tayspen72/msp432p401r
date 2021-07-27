@@ -20,11 +20,41 @@ use msp432p401r_pac;
 #[allow(dead_code)]
 #[derive(Copy, Clone, PartialEq)]
 pub enum Channel{
-	Channel0 = 0,
-	Channel1 = 1,
-	Channel2 = 2,
-	Channel3 = 3,
-	Temperature = 31,
+	A0 = 0,
+	A1 = 1,
+	A2 = 2,
+	A3 = 3,
+	A4 = 4,
+	A5 = 5,
+	A6 = 6,
+	A7 = 7,
+	A8 = 8,
+	A9 = 9,
+	A10 = 10,
+	A11 = 11,
+	A12 = 12,
+	A13 = 13,
+	A14 = 14,
+	A15 = 15,
+	A16 = 16,
+	A17 = 17,
+	A18 = 18,
+	A19 = 19,
+	A20 = 20,
+	A21 = 21,
+	Temperature = 22,
+	Battery = 23
+}
+
+#[allow(dead_code)]
+#[derive(Copy, Clone, PartialEq)]
+enum ChannelMap{
+	ChMap0,
+	ChMap1,
+	ChMap2,
+	ChMap3,
+	TcMap,
+	BatMap
 }
 
 #[allow(dead_code)]
@@ -55,7 +85,6 @@ pub struct Adc{
 	pub port: mcu::Port,
 	pub pin: u8,
 	pub channel: Channel,
-	pub signal: u8,
 	pub function_select: u8,
 	pub resolution: Resolution,
 
@@ -73,7 +102,6 @@ const TEMPERATURE_ADC: Adc = Adc {
 	port: mcu::Port::PortDisabled,
 	pin: 0,
 	channel: Channel::Temperature,
-	signal: 0,
 	function_select: 0,
 	resolution: Resolution::B14
 };
@@ -123,12 +151,14 @@ pub fn configure(adc: &Adc) {
 
 			adc14.adc14ctl0.write(|w| w
 				.adc14pdiv().adc14pdiv_0()
-				.adc14shs().bits(TriggerSource::Software as u8)
+				// .adc14shs().bits(TriggerSource::Software as u8)
 				.adc14div().adc14div_0()
 				.adc14ssel().adc14ssel_4()
-				.adc14conseq().adc14conseq_0()
+				// .adc14conseq().adc14conseq_0()
+				.adc14sht1().adc14sht1_7()
+				.adc14sht0().adc14sht0_7()
 				.adc14on().adc14on_1()
-				.adc14enc().clear_bit()
+				// .adc14enc().clear_bit()
 			);
 
 			// Enable interrupt flag for completion monitoring
@@ -155,12 +185,14 @@ pub fn read(adc: &Adc) -> u16 {
 	free(|cs| {
 		if let Some(ref mut adc14) = ADC_HANDLE.borrow(cs).borrow_mut().deref_mut() {
 			// Assign object config
+			let channel_map = get_channel_map(adc.channel);
 			adc14.adc14ctl1.write(|w| unsafe { w
-				.adc14ch3map().bit(adc.channel == Channel::Channel3)
-				.adc14ch2map().bit(adc.channel == Channel::Channel2)
-				.adc14ch1map().bit(adc.channel == Channel::Channel1)
-				.adc14ch0map().bit(adc.channel == Channel::Channel0)
-				.adc14tcmap().bit(adc.channel == Channel::Temperature)
+				.adc14ch3map().bit(channel_map == ChannelMap::ChMap3)
+				.adc14ch2map().bit(channel_map == ChannelMap::ChMap2)
+				.adc14ch1map().bit(channel_map == ChannelMap::ChMap1)
+				.adc14ch0map().bit(channel_map == ChannelMap::ChMap0)
+				.adc14tcmap().bit(channel_map == ChannelMap::TcMap)
+				.adc14batmap().bit(channel_map == ChannelMap::BatMap)
 				.adc14cstartadd().bits(adc.channel as u8)
 				.adc14res().bits(adc.resolution as u8)
 				.adc14df().clear_bit()
@@ -168,12 +200,11 @@ pub fn read(adc: &Adc) -> u16 {
 				.adc14pwrmd().adc14pwrmd_0()
 			} );
 
-			let channel: usize = adc.channel as usize;
-			adc14.adc14mctl[channel].write(|w| w
+			adc14.adc14mctl[adc.channel as usize].write(|w| w
 				.adc14dif().clear_bit()
 				.adc14vrsel().adc14vrsel_0()
 				.adc14eos().set_bit()
-				.adc14inch().bits(adc.signal)
+				.adc14inch().bits(adc.channel as u8)
 			);
 
 			// Clear the conversion flag before starting
@@ -205,7 +236,18 @@ pub fn read_ref(adc: &Adc, v_ref: f32) -> f32 {
 //==============================================================================
 // Private Functions
 //==============================================================================
-
+fn get_channel_map(channel: Channel) -> ChannelMap {
+	match channel {
+		Channel::A6 => ChannelMap::ChMap3,
+		Channel::A7 => ChannelMap::ChMap2,
+		Channel::A8 => ChannelMap::ChMap1,
+		Channel::A9 => ChannelMap::ChMap0,
+		Channel::A10 => ChannelMap::TcMap,
+		Channel::A11 => ChannelMap::BatMap,
+		Channel::Temperature => ChannelMap::TcMap,
+		Channel::Battery => ChannelMap::BatMap,
+	}
+}
 
 //==============================================================================
 // Interrupt Handler

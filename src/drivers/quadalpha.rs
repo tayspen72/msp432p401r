@@ -266,6 +266,6 @@ fn write(buf: &[char; 4], decimal: bool){
 pub fn task_handler(info: &mut app::Info) {
 	if info.change_flags.speed {
 		let digits: [char; 4] = get_digits(info.speed);
-		write(&digits, true);
+		write(&digits, false);
 	}
 }

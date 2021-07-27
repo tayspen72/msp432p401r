@@ -8,7 +8,7 @@
 // Crates and Mods
 //==============================================================================
 use crate::{app, config};
-use crate::mcu::{adc, rtc};
+use crate::mcu::{adc, systick};
 
 //==============================================================================
 // Enums, Structs, and Types
@@ -28,7 +28,6 @@ const FUEL_ADC: adc::Adc = adc::Adc {
 	port: config::FUEL_ADC_PORT,
 	pin: config::FUEL_ADC_PIN,
 	channel: config::FUEL_ADC_CHANNEL,
-	signal: config::FUEL_ADC_SIGNAL,
 	function_select: config::FUEL_ADC_FUNCTION_SELECT,
 	resolution: adc::Resolution::B14
 };
@@ -36,6 +35,7 @@ const FUEL_ADC: adc::Adc = adc::Adc {
 //==============================================================================
 // Variables
 //==============================================================================
+#[allow(dead_code)]
 const FUEL_UPDATE_TIME: u32 = 5;
 
 //==============================================================================
@@ -45,9 +45,10 @@ pub fn init() {
 	adc::configure(&FUEL_ADC);
 }
 
+#[allow(dead_code)]
 pub fn get_fuel_level() -> FuelLevel {
 	// TODO: Finish this
-	let adc = adc::read_ref(&FUEL_ADC, 3.3);
+	let adc = adc::read_ref(&FUEL_ADC, 2.5);
 
 	let r = 1.0 / ((3.3 / adc ) - 1.0);
 
@@ -72,14 +73,20 @@ pub fn get_fuel_level() -> FuelLevel {
 pub fn task_handler(info: &mut app::Info){
 	static mut LAST_TIME: u32 = 0;
 
+	if info.change_flags.speed {
+		info.change_flags.speed = false;
+	}
+	
 	unsafe { 
-		if rtc::get_diff(LAST_TIME) > FUEL_UPDATE_TIME {
-			LAST_TIME = rtc::get_time();
+		// if rtc::get_diff(LAST_TIME) > FUEL_UPDATE_TIME {
+			// LAST_TIME = rtc::get_time();
+		if systick::get_diff(LAST_TIME) >= 20 {
+			LAST_TIME = systick::get_time();
 
-			let last_level = info.fuel_level;
-			info.fuel_level = get_fuel_level();
-			if info.fuel_level != last_level {
-				info.change_flags.fuel_level = true;
+			let speed = info.speed;
+			info.speed = adc::read(&FUEL_ADC);
+			if info.speed != speed {
+				info.change_flags.speed = true;
 			}
 		}
 	}

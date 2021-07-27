@@ -109,8 +109,13 @@ pub fn init() {
 	// Enable temperature sensor in reference module
 	peripherals.REF_A.refctl0.modify(|_, w| w
 		.reftcoff().clear_bit()
+		.refvsel().refvsel_3()
 		.refon().set_bit()
 	);
+	
+	// Enable FPU for floating point operations
+	let mut scb = cortex_peripherals.SCB;
+	scb.enable_fpu();
 	
 	eusci::init(
 		peripherals.EUSCI_A0,
@@ -223,5 +228,5 @@ fn init_clock(clock: msp432p401r_pac::CS) {
 // Task Handler
 //==============================================================================
 pub fn task_handler() {
-
+	
 }
