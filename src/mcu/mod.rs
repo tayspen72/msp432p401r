@@ -123,7 +123,6 @@ pub fn init() {
 		peripherals.EUSCI_B3
 	);
 	
-	// adc::init(peripherals.SAADC);
 	counter::init(
 		peripherals.TIMER_A0,
 		peripherals.TIMER_A1,
@@ -131,19 +130,14 @@ pub fn init() {
 		peripherals.TIMER_A3
 	);
 	gpio::init(peripherals.DIO);
-	// input::init(peripherals.GPIOTE);
-	// i2c::init(peripherals.TWI1);
-	// rtc::init(peripherals.RTC0, &peripherals.CLOCK, wake_interval);
-	// spi::init(peripherals.SPI0);
-	// spim::init(peripherals.SPIM0);
-	// timer::init(peripherals.TIMER0);
 	
-	// Clock uses GPIO - initialize after gpio is initialized
+	// These peripherals use GPIO pins
+	adc::init(peripherals.ADC14);
 	init_clock(peripherals.CS);
 
-	// Ensure SYSTICK is using the correct clock when running. Init after clock
+	// These peripherals rely on the core clock being stable
 	systick::init(cortex_peripherals.SYST);
-
+	rtc::init(peripherals.RTC_C);
 }
 
 #[allow(dead_code)]
