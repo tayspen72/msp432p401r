@@ -48,13 +48,14 @@ pub enum Channel{
 
 #[allow(dead_code)]
 #[derive(Copy, Clone, PartialEq)]
-enum ChannelMap{
+enum InternalChannelMap{
 	ChMap0,
 	ChMap1,
 	ChMap2,
 	ChMap3,
 	TcMap,
-	BatMap
+	BatMap,
+	None
 }
 
 #[allow(dead_code)]
@@ -151,18 +152,18 @@ pub fn configure(adc: &Adc) {
 
 			adc14.adc14ctl0.write(|w| w
 				.adc14pdiv().adc14pdiv_0()
-				// .adc14shs().bits(TriggerSource::Software as u8)
+				.adc14shs().bits(TriggerSource::Software as u8)
 				.adc14div().adc14div_0()
 				.adc14ssel().adc14ssel_4()
-				// .adc14conseq().adc14conseq_0()
+				.adc14conseq().adc14conseq_0()
 				.adc14sht1().adc14sht1_7()
 				.adc14sht0().adc14sht0_7()
 				.adc14on().adc14on_1()
-				// .adc14enc().clear_bit()
+				.adc14enc().clear_bit()
 			);
 
 			// Enable interrupt flag for completion monitoring
-			adc14.adc14ier0.modify(|r, w| unsafe { w.bits(r.bits() | (1 << adc.channel as u8)) });
+			adc14.adc14ier0.modify(|_, w| w.adc14ie0().set_bit());
 
 			// Do not re-enable when finished
 		}
@@ -187,12 +188,12 @@ pub fn read(adc: &Adc) -> u16 {
 			// Assign object config
 			let channel_map = get_channel_map(adc.channel);
 			adc14.adc14ctl1.write(|w| unsafe { w
-				.adc14ch3map().bit(channel_map == ChannelMap::ChMap3)
-				.adc14ch2map().bit(channel_map == ChannelMap::ChMap2)
-				.adc14ch1map().bit(channel_map == ChannelMap::ChMap1)
-				.adc14ch0map().bit(channel_map == ChannelMap::ChMap0)
-				.adc14tcmap().bit(channel_map == ChannelMap::TcMap)
-				.adc14batmap().bit(channel_map == ChannelMap::BatMap)
+				.adc14ch3map().bit(channel_map == InternalChannelMap::ChMap3)
+				.adc14ch2map().bit(channel_map == InternalChannelMap::ChMap2)
+				.adc14ch1map().bit(channel_map == InternalChannelMap::ChMap1)
+				.adc14ch0map().bit(channel_map == InternalChannelMap::ChMap0)
+				.adc14tcmap().bit(channel_map == InternalChannelMap::TcMap)
+				.adc14batmap().bit(channel_map == InternalChannelMap::BatMap)
 				.adc14cstartadd().bits(adc.channel as u8)
 				.adc14res().bits(adc.resolution as u8)
 				.adc14df().clear_bit()
@@ -200,7 +201,7 @@ pub fn read(adc: &Adc) -> u16 {
 				.adc14pwrmd().adc14pwrmd_0()
 			} );
 
-			adc14.adc14mctl[adc.channel as usize].write(|w| w
+			adc14.adc14mctl[0].write(|w| w
 				.adc14dif().clear_bit()
 				.adc14vrsel().adc14vrsel_0()
 				.adc14eos().set_bit()
@@ -208,7 +209,7 @@ pub fn read(adc: &Adc) -> u16 {
 			);
 
 			// Clear the conversion flag before starting
-			adc14.adc14clrifgr0.write(|w| unsafe { w.bits(1<< adc.channel as u8) });
+			adc14.adc14clrifgr0.write(|w| w.clradc14ifg0().set_bit());
 
 			// Set software trigger to start read
 			adc14.adc14ctl0.modify(|_, w| w
@@ -216,10 +217,10 @@ pub fn read(adc: &Adc) -> u16 {
 			);
 			
 			// Wait for config to finish
-			while adc14.adc14ifgr0.read().bits() & (1 << adc.channel as u8) == 0 {}
+			while adc14.adc14ifgr0.read().adc14ifg0().is_adc14ifg0_0() {}
 			// while adc14.adc14ctl0.read().adc14busy().bit() {}
 
-			adc14.adc14mem[adc.channel as usize].read().conversion_results().bits()
+			adc14.adc14mem[0].read().conversion_results().bits()
 		}
 		else {
 			0
@@ -236,16 +237,15 @@ pub fn read_ref(adc: &Adc, v_ref: f32) -> f32 {
 //==============================================================================
 // Private Functions
 //==============================================================================
-fn get_channel_map(channel: Channel) -> ChannelMap {
+fn get_channel_map(channel: Channel) -> InternalChannelMap {
 	match channel {
-		Channel::A6 => ChannelMap::ChMap3,
-		Channel::A7 => ChannelMap::ChMap2,
-		Channel::A8 => ChannelMap::ChMap1,
-		Channel::A9 => ChannelMap::ChMap0,
-		Channel::A10 => ChannelMap::TcMap,
-		Channel::A11 => ChannelMap::BatMap,
-		Channel::Temperature => ChannelMap::TcMap,
-		Channel::Battery => ChannelMap::BatMap,
+		Channel::A18 => InternalChannelMap::ChMap3,
+		Channel::A19 => InternalChannelMap::ChMap2,
+		Channel::A20 => InternalChannelMap::ChMap1,
+		Channel::A21 => InternalChannelMap::ChMap0,
+		Channel::Temperature => InternalChannelMap::TcMap,
+		Channel::Battery => InternalChannelMap::BatMap,
+		_ => InternalChannelMap::None
 	}
 }
 
