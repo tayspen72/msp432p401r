@@ -152,7 +152,7 @@ pub fn init() {
 
 	// These peripherals rely on the core clock being stable
 	systick::init(cortex_peripherals.SYST);
-	rtc::init(peripherals.RTC_C);
+	rtc::init(peripherals.RTC_C, rtc::WakeInterval::Wake250Ms);
 
 	init_temp_sensor();
 }
