@@ -63,7 +63,8 @@ pub fn task_handler(info: &mut app::Info){
 	unsafe { 
 		if rtc::get_diff(LAST_TIME) > UPDATE_FREQUENCY {
 			LAST_TIME = rtc::get_time();
-			let speed = counter::get_count(&COUNTER);
+			// let speed = counter::get_count(&COUNTER);
+			let speed = mcu::get_temperature();
 			
 			if info.speed != speed {
 				info.change_flags.speed = true;

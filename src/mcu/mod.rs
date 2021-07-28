@@ -168,14 +168,15 @@ pub fn get_system_clock() -> SystemClock {
 }
 
 #[allow(dead_code)]
-pub fn get_temperature() -> i8 {
+pub fn get_temperature() -> u16 {
 	// Temperature graph seems to be appx:
 	//	y = 2x + 685mV
 	//	-> 
 	//	temp(C) = { ADC(mV) - 685mV } / 2
-	let read = adc::read_ref(&TEMPERATURE_ADC, 3.3);
+	// let read = adc::read_ref(&TEMPERATURE_ADC, 3.3);
 
-	((read - 0.685) / 2.0) as i8
+	// ((read - 0.685) / 2.0) as i8
+	adc::read(&TEMPERATURE_ADC)
 }
 
 #[allow(dead_code)]
@@ -263,12 +264,6 @@ fn init_nvic(nvic: cortex_m::peripheral::NVIC) {
 
 fn init_temp_sensor() {
 	adc::configure(&TEMPERATURE_ADC);
-
-	let _val = adc::read(&TEMPERATURE_ADC);
-	let _val = adc::read(&TEMPERATURE_ADC);
-	let _val = adc::read(&TEMPERATURE_ADC);
-	let _val = adc::read(&TEMPERATURE_ADC);
-	let _val = adc::read(&TEMPERATURE_ADC);
 }
 
 //==============================================================================
