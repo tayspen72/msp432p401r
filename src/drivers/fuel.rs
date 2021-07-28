@@ -8,7 +8,7 @@
 // Crates and Mods
 //==============================================================================
 use crate::{app, config};
-use crate::mcu::{adc, systick};
+use crate::mcu::{adc};
 
 //==============================================================================
 // Enums, Structs, and Types
@@ -70,24 +70,22 @@ pub fn get_fuel_level() -> FuelLevel {
 //==============================================================================
 // Task Handler
 //==============================================================================
-pub fn task_handler(info: &mut app::Info){
-	static mut LAST_TIME: u32 = 0;
+pub fn task_handler(_info: &mut app::Info){
+	// static mut LAST_TIME: u32 = 0;
 
-	if info.change_flags.speed {
-		info.change_flags.speed = false;
-	}
+	// if info.change_flags.fuel_level {
+	// 	info.change_flags.fuel_level = false;
+	// }
 	
-	unsafe { 
-		// if rtc::get_diff(LAST_TIME) > FUEL_UPDATE_TIME {
-			// LAST_TIME = rtc::get_time();
-		if systick::get_diff(LAST_TIME) >= 20 {
-			LAST_TIME = systick::get_time();
+	// unsafe { 
+	// 	if rtc::get_diff(LAST_TIME) > FUEL_UPDATE_TIME {
+	// 		LAST_TIME = rtc::get_time();
 
-			let speed = info.speed;
-			info.speed = adc::read(&FUEL_ADC);
-			if info.speed != speed {
-				info.change_flags.speed = true;
-			}
-		}
-	}
+	// 		let level = info.fuel_level;
+	// 		info.fuel_level = get_fuel_level();
+	// 		if info.fuel_level != level {
+	// 			info.change_flags.fuel_level = true;
+	// 		}
+	// 	}
+	// }
 }
