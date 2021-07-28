@@ -13,6 +13,7 @@ use cortex_m::interrupt::{free, Mutex};
 use crate::mcu;
 use crate::mcu::gpio;
 use msp432p401r_pac;
+use msp432p401r_pac::interrupt;
 
 //==============================================================================
 // Enums, Structs, and Types
@@ -88,7 +89,6 @@ pub struct Adc{
 	pub channel: Channel,
 	pub function_select: u8,
 	pub resolution: Resolution,
-
 }
 
 //==============================================================================
@@ -147,25 +147,61 @@ pub fn configure(adc: &Adc) {
 
 	free(|cs| {
 		if let Some(ref mut adc14) = ADC_HANDLE.borrow(cs).borrow_mut().deref_mut() {
-			// Be sure to be disabled, especially for config
-			adc14.adc14ctl0.write(|w| w.adc14enc().clear_bit());
-
-			adc14.adc14ctl0.write(|w| w
+			// Take these out later
+			adc14.adc14ctl0.write(|w| w.adc14on().set_bit());
+			adc14.adc14ctl0.modify(|_, w| w
 				.adc14pdiv().adc14pdiv_0()
-				.adc14shs().bits(TriggerSource::Software as u8)
 				.adc14div().adc14div_0()
-				.adc14ssel().adc14ssel_4()
-				.adc14conseq().adc14conseq_0()
-				.adc14sht1().adc14sht1_7()
-				.adc14sht0().adc14sht0_7()
-				.adc14on().adc14on_1()
-				.adc14enc().clear_bit()
+				.adc14ssel().adc14ssel_3()
 			);
-
-			// Enable interrupt flag for completion monitoring
+			adc14.adc14ctl1.write(|w| w.adc14tcmap().set_bit());	
+			adc14.adc14ctl1.modify(|_, w| unsafe { w.adc14cstartadd().bits(0) });	
+			adc14.adc14ctl0.modify(|_, w| w.adc14conseq().adc14conseq_2());	
+			adc14.adc14mctl[0].write(|w| w
+				.adc14inch().bits(22)
+				.adc14vrsel().adc14vrsel_1()
+			);
+			adc14.adc14ctl0.modify(|_, w| w
+				.adc14sht0().adc14sht0_7()
+				.adc14sht1().adc14sht1_7()
+			);
+			adc14.adc14ctl0.modify(|_, w| w.adc14shp().adc14shp_1());
+			adc14.adc14ctl0.modify(|_, w| w.adc14msc().adc14msc_1());
 			adc14.adc14ier0.modify(|_, w| w.adc14ie0().set_bit());
+			adc14.adc14ier0.modify(|_, w| w.adc14ie0().set_bit());
+		}
+	});
 
-			// Do not re-enable when finished
+	unsafe {
+		mcu::nvic_enable(24);
+		cortex_m::interrupt::enable();
+	}
+	
+	free(|cs| {
+		if let Some(ref mut adc14) = ADC_HANDLE.borrow(cs).borrow_mut().deref_mut() {
+			adc14.adc14ctl0.modify(|_, w| w.adc14enc().adc14enc_1());
+			adc14.adc14ctl0.modify(|_, w| w.adc14sc().adc14sc_1());
+			
+			// TODO: Bring this back
+			// Be sure to be disabled, especially for config
+			// adc14.adc14ctl0.write(|w| w.adc14enc().clear_bit());
+
+			// adc14.adc14ctl0.write(|w| w
+			// 	.adc14pdiv().adc14pdiv_0()
+			// 	.adc14shs().bits(TriggerSource::Software as u8)
+			// 	.adc14div().adc14div_0()
+			// 	.adc14ssel().adc14ssel_4()
+			// 	.adc14conseq().adc14conseq_0()
+			// 	.adc14sht1().adc14sht1_7()
+			// 	.adc14sht0().adc14sht0_7()
+			// 	.adc14on().adc14on_1()
+			// 	.adc14enc().clear_bit()
+			// );
+
+			// // Enable interrupt flag for completion monitoring
+			// adc14.adc14ier0.modify(|_, w| w.adc14ie0().set_bit());
+
+			// // Do not re-enable when finished
 		}
 	});
 }
@@ -178,7 +214,7 @@ pub fn get_temperature() -> i8 {
 	//	temp(C) = { ADC(mV) - 685mV } / 2
 	let read = read_ref(&TEMPERATURE_ADC, 3.3);
 
-	((read - 685.0) / 2.0) as i8
+	((read - 0.685) / 2.0) as i8
 }
 
 #[allow(dead_code)]
@@ -186,7 +222,7 @@ pub fn read(adc: &Adc) -> u16 {
 	free(|cs| {
 		if let Some(ref mut adc14) = ADC_HANDLE.borrow(cs).borrow_mut().deref_mut() {
 			// Assign object config
-			let channel_map = get_channel_map(adc.channel);
+			let channel_map = get_internal_channel(adc.channel);
 			adc14.adc14ctl1.write(|w| unsafe { w
 				.adc14ch3map().bit(channel_map == InternalChannelMap::ChMap3)
 				.adc14ch2map().bit(channel_map == InternalChannelMap::ChMap2)
@@ -194,7 +230,7 @@ pub fn read(adc: &Adc) -> u16 {
 				.adc14ch0map().bit(channel_map == InternalChannelMap::ChMap0)
 				.adc14tcmap().bit(channel_map == InternalChannelMap::TcMap)
 				.adc14batmap().bit(channel_map == InternalChannelMap::BatMap)
-				.adc14cstartadd().bits(adc.channel as u8)
+				.adc14cstartadd().bits(0)
 				.adc14res().bits(adc.resolution as u8)
 				.adc14df().clear_bit()
 				.adc14refburst().set_bit()
@@ -217,8 +253,8 @@ pub fn read(adc: &Adc) -> u16 {
 			);
 			
 			// Wait for config to finish
-			while adc14.adc14ifgr0.read().adc14ifg0().is_adc14ifg0_0() {}
-			// while adc14.adc14ctl0.read().adc14busy().bit() {}
+			// while adc14.adc14ifgr0.read().adc14ifg0().is_adc14ifg0_0() {}
+			while adc14.adc14ctl0.read().adc14busy().bit() {}
 
 			adc14.adc14mem[0].read().conversion_results().bits()
 		}
@@ -237,7 +273,7 @@ pub fn read_ref(adc: &Adc, v_ref: f32) -> f32 {
 //==============================================================================
 // Private Functions
 //==============================================================================
-fn get_channel_map(channel: Channel) -> InternalChannelMap {
+fn get_internal_channel(channel: Channel) -> InternalChannelMap {
 	match channel {
 		Channel::A18 => InternalChannelMap::ChMap3,
 		Channel::A19 => InternalChannelMap::ChMap2,
@@ -252,7 +288,18 @@ fn get_channel_map(channel: Channel) -> InternalChannelMap {
 //==============================================================================
 // Interrupt Handler
 //==============================================================================
-
+#[interrupt]
+fn ADC14_IRQ () {
+	free(|cs| {
+		if let Some(ref mut adc14) = ADC_HANDLE.borrow(cs).borrow_mut().deref_mut() {
+			let read = adc14.adc14ifgr0.read().bits();
+			adc14.adc14clrifgr0.write(|w| unsafe { w.bits(read) });
+			
+			let val = adc14.adc14mem[0].read().bits();
+			let val = 0;
+		}
+	});
+}
 
 //==============================================================================
 // Task Handler
