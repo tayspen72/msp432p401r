@@ -31,19 +31,6 @@ pub enum McuState {
 
 #[allow(dead_code)]
 #[derive(Copy, Clone, PartialEq)]
-pub struct SystemClock{
-	pub m_clk: u32,
-	pub hsm_clk: u32,
-	pub sm_clk: u32,
-	pub a_clk: u32,
-	pub b_clk: u32
-}
-
-//==============================================================================
-// Variables
-//==============================================================================
-#[allow(dead_code)]
-#[derive(Copy, Clone, PartialEq)]
 pub enum Port{
 	Port1,
 	Port2,
@@ -58,6 +45,22 @@ pub enum Port{
 	PortJ,
 	PortDisabled
 }
+
+#[allow(dead_code)]
+#[derive(Copy, Clone, PartialEq)]
+pub struct SystemClock{
+	pub m_clk: u32,
+	pub hsm_clk: u32,
+	pub sm_clk: u32,
+	pub a_clk: u32,
+	pub b_clk: u32
+}
+
+//==============================================================================
+// Variables
+//==============================================================================
+static NVIC_HANDLE: Mutex<RefCell<Option<cortex_m::peripheral::NVIC>>> = 
+	Mutex::new(RefCell::new(None));
 
 const HFXT_CLK_IN: gpio::PinConfig = gpio::PinConfig {
 	port: config::HFXCLK_IN_PORT,
@@ -96,8 +99,13 @@ static mut SYSTEM_CLOCK: SystemClock = SystemClock {
 	b_clk: 0,
 };
 
-static NVIC_HANDLE: Mutex<RefCell<Option<cortex_m::peripheral::NVIC>>> = 
-	Mutex::new(RefCell::new(None));
+const TEMPERATURE_ADC: adc::Adc = adc::Adc {
+	port: Port::PortDisabled,
+	pin: 0,
+	channel: adc::Channel::Temperature,
+	function_select: 0,
+	resolution: adc::Resolution::B14
+};
 
 //==============================================================================
 // Public Functions
@@ -105,9 +113,8 @@ static NVIC_HANDLE: Mutex<RefCell<Option<cortex_m::peripheral::NVIC>>> =
 pub fn init() {
 	let peripherals = msp432p401r_pac::Peripherals::take().unwrap();
 	let cortex_peripherals = cortex_m::Peripherals::take().unwrap();
-
-	free(|cs| NVIC_HANDLE.borrow(cs).replace(Some(cortex_peripherals.NVIC)));
 	
+	init_nvic(cortex_peripherals.NVIC);
 	wdt::init(peripherals.WDT_A);
 
 	// Enable all banks of SRAM and wait for SRAM_RDY to be set
@@ -131,7 +138,6 @@ pub fn init() {
 		peripherals.EUSCI_B2,
 		peripherals.EUSCI_B3
 	);
-	
 	counter::init(
 		peripherals.TIMER_A0,
 		peripherals.TIMER_A1,
@@ -145,8 +151,10 @@ pub fn init() {
 	init_clock(peripherals.CS);
 
 	// These peripherals rely on the core clock being stable
-	// systick::init(cortex_peripherals.SYST);
+	systick::init(cortex_peripherals.SYST);
 	rtc::init(peripherals.RTC_C);
+
+	init_temp_sensor();
 }
 
 #[allow(dead_code)]
@@ -160,6 +168,17 @@ pub fn get_system_clock() -> SystemClock {
 }
 
 #[allow(dead_code)]
+pub fn get_temperature() -> i8 {
+	// Temperature graph seems to be appx:
+	//	y = 2x + 685mV
+	//	-> 
+	//	temp(C) = { ADC(mV) - 685mV } / 2
+	let read = adc::read_ref(&TEMPERATURE_ADC, 3.3);
+
+	((read - 0.685) / 2.0) as i8
+}
+
+#[allow(dead_code)]
 pub fn nvic_enable(num: u8) {
 	free(|cs| {
 		if let Some(ref mut nvic) = NVIC_HANDLE.borrow(cs).borrow_mut().deref_mut() {
@@ -168,6 +187,7 @@ pub fn nvic_enable(num: u8) {
 		}
 	});
 }
+
 #[allow(dead_code)]
 pub fn restart() {
 	cortex_m::peripheral::SCB::sys_reset();
@@ -235,6 +255,20 @@ fn init_clock(clock: msp432p401r_pac::CS) {
 			b_clk: 32_768,
 		};
 	}
+}
+
+fn init_nvic(nvic: cortex_m::peripheral::NVIC) {
+	free(|cs| NVIC_HANDLE.borrow(cs).replace(Some(nvic)));
+}
+
+fn init_temp_sensor() {
+	adc::configure(&TEMPERATURE_ADC);
+
+	let _val = adc::read(&TEMPERATURE_ADC);
+	let _val = adc::read(&TEMPERATURE_ADC);
+	let _val = adc::read(&TEMPERATURE_ADC);
+	let _val = adc::read(&TEMPERATURE_ADC);
+	let _val = adc::read(&TEMPERATURE_ADC);
 }
 
 //==============================================================================
