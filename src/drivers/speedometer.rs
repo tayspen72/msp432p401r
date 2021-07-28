@@ -9,7 +9,7 @@
 //==============================================================================
 use crate::{app, config};
 use crate::mcu;
-use crate::mcu::{counter, gpio, systick};
+use crate::mcu::{counter, gpio, rtc};
 
 //==============================================================================
 // Enums, Structs, and Types
@@ -61,8 +61,8 @@ pub fn task_handler(info: &mut app::Info){
 	}
 	
 	unsafe { 
-		if systick::get_diff(LAST_TIME) > UPDATE_FREQUENCY {
-			LAST_TIME = systick::get_time();
+		if rtc::get_diff(LAST_TIME) > UPDATE_FREQUENCY {
+			LAST_TIME = rtc::get_time();
 			let speed = counter::get_count(&COUNTER);
 			
 			if info.speed != speed {
