@@ -6,7 +6,10 @@
 //==============================================================================
 // Crates and Mods
 //==============================================================================
+use core::cell::RefCell;
+use core::ops::DerefMut;
 use cortex_m;
+use cortex_m::interrupt::{free, Mutex};
 use msp432p401r_pac;
 
 use crate::config;
@@ -93,6 +96,9 @@ static mut SYSTEM_CLOCK: SystemClock = SystemClock {
 	b_clk: 0,
 };
 
+static NVIC_HANDLE: Mutex<RefCell<Option<cortex_m::peripheral::NVIC>>> = 
+	Mutex::new(RefCell::new(None));
+
 //==============================================================================
 // Public Functions
 //==============================================================================
@@ -100,6 +106,8 @@ pub fn init() {
 	let peripherals = msp432p401r_pac::Peripherals::take().unwrap();
 	let cortex_peripherals = cortex_m::Peripherals::take().unwrap();
 
+	free(|cs| NVIC_HANDLE.borrow(cs).replace(Some(cortex_peripherals.NVIC)));
+	
 	wdt::init(peripherals.WDT_A);
 
 	// Enable all banks of SRAM and wait for SRAM_RDY to be set
@@ -112,10 +120,6 @@ pub fn init() {
 		.refvsel().refvsel_3()
 		.refon().set_bit()
 	);
-	
-	// Enable FPU for floating point operations
-	let mut scb = cortex_peripherals.SCB;
-	scb.enable_fpu();
 	
 	eusci::init(
 		peripherals.EUSCI_A0,
@@ -141,7 +145,7 @@ pub fn init() {
 	init_clock(peripherals.CS);
 
 	// These peripherals rely on the core clock being stable
-	systick::init(cortex_peripherals.SYST);
+	// systick::init(cortex_peripherals.SYST);
 	rtc::init(peripherals.RTC_C);
 }
 
@@ -155,6 +159,15 @@ pub fn get_system_clock() -> SystemClock {
 	unsafe { SYSTEM_CLOCK } 
 }
 
+#[allow(dead_code)]
+pub fn nvic_enable(num: u8) {
+	free(|cs| {
+		if let Some(ref mut nvic) = NVIC_HANDLE.borrow(cs).borrow_mut().deref_mut() {
+			let read = nvic.iser[0].read();
+			unsafe { nvic.iser[0].write(read | (1 << num)) };
+		}
+	});
+}
 #[allow(dead_code)]
 pub fn restart() {
 	cortex_m::peripheral::SCB::sys_reset();
