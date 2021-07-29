@@ -10,7 +10,7 @@
 use core::cell::{Cell, RefCell};
 use core::ops::DerefMut;
 use cortex_m::interrupt::{free, Mutex};
-use crate::mcu;
+use crate::mcu::nvic;
 use msp432p401r_pac;
 use msp432p401r_pac::interrupt;
 
@@ -33,9 +33,9 @@ static RTC_HANDLE: Mutex<RefCell<Option<msp432p401r_pac::RTC_C>>> =
 	Mutex::new(RefCell::new(None));
 static CURRENT_TIME: Mutex<Cell<u32>> = Mutex::new(Cell::new(0));
 static CURRENT_TIME_MS: Mutex<Cell<u32>> = Mutex::new(Cell::new(0));
-
 static mut INITIALIZED: bool = false;
 static mut INTERVAL: u32 = 0;
+const RTC_C_IRQ_N: u8 = 29;
 
 //==============================================================================
 // Public Functions
@@ -63,7 +63,7 @@ pub fn get_diff(time: u32) -> u32 {
 	}}
 
 	let current = free(|cs| CURRENT_TIME.borrow(cs).get());
-	if time < current {
+	if current < time {
 		0
 	}
 	else {
@@ -82,7 +82,7 @@ pub fn get_diff_ms(time: u32, time_ms: u32) -> u32 {
 	let current_actual = current + current_ms;
 	let time_actual = time + time_ms;
 
-	if time_actual < current_actual {
+	if current_actual < time_actual {
 		0
 	}
 	else {
@@ -131,10 +131,12 @@ fn configure(rtc: &msp432p401r_pac::RTC_C, wake_interval: WakeInterval) {
 	rtc.rtcps1ctl.write(|w| w
 		.rt1ip().bits(interval)
 		.rt1psie().set_bit()
+		.rt1psifg().clear_bit()
 	);
 
 	// Set the interrupt bit
-	mcu::nvic_enable(29);
+	nvic::nvic_clear_pending(RTC_C_IRQ_N);
+	nvic::nvic_enable(RTC_C_IRQ_N);
 
 	// Release hold on the RTC
 	rtc.rtcctl13.modify(|_, w| w.rtchold().clear_bit());
@@ -154,8 +156,8 @@ fn RTC_C_IRQ () {
 			// Unlock register access
 			rtc.rtcctl0.write(|w| unsafe { w.rtckey().bits(0xA5) });
 
-			// Clear intettupt flag bit
-			rtc.rtcps1ctl.modify(|_, w| w.rt1psie().clear_bit());
+			// Clear interrupt flag bit
+			rtc.rtcps1ctl.modify(|_, w| w.rt1psifg().clear_bit());
 
 			// Lock when finished
 			rtc.rtcctl0.write(|w| unsafe { w.rtckey().bits(0xFF) });
