@@ -6,10 +6,7 @@
 //==============================================================================
 // Crates and Mods
 //==============================================================================
-use core::cell::RefCell;
-use core::ops::DerefMut;
 use cortex_m;
-use cortex_m::interrupt::{free, Mutex};
 use msp432p401r_pac;
 
 use crate::config;
@@ -18,6 +15,7 @@ pub mod adc;
 pub mod counter;
 pub mod eusci;
 pub mod gpio;
+pub mod nvic;
 pub mod rtc;
 pub mod systick;
 pub mod wdt;
@@ -59,9 +57,6 @@ pub struct SystemClock{
 //==============================================================================
 // Variables
 //==============================================================================
-static NVIC_HANDLE: Mutex<RefCell<Option<cortex_m::peripheral::NVIC>>> = 
-	Mutex::new(RefCell::new(None));
-
 const HFXT_CLK_IN: gpio::PinConfig = gpio::PinConfig {
 	port: config::HFXCLK_IN_PORT,
 	pin: config::HFXCLK_IN_PIN,
@@ -114,7 +109,9 @@ pub fn init() {
 	let peripherals = msp432p401r_pac::Peripherals::take().unwrap();
 	let cortex_peripherals = cortex_m::Peripherals::take().unwrap();
 	
-	init_nvic(cortex_peripherals.NVIC);
+	cortex_m::interrupt::disable();
+
+	nvic::init(cortex_peripherals.NVIC);
 	wdt::init(peripherals.WDT_A);
 
 	// Enable all banks of SRAM and wait for SRAM_RDY to be set
@@ -155,6 +152,8 @@ pub fn init() {
 	rtc::init(peripherals.RTC_C, rtc::WakeInterval::Wake250Ms);
 
 	init_temp_sensor();
+	
+	unsafe { cortex_m::interrupt::enable() };
 }
 
 #[allow(dead_code)]
@@ -168,26 +167,17 @@ pub fn get_system_clock() -> SystemClock {
 }
 
 #[allow(dead_code)]
-pub fn get_temperature() -> u16 {
+pub fn get_temperature() -> i8 {
 	// Temperature graph seems to be appx:
-	//	y = 2x + 685mV
+	//	y = 0.00104x + 0.65166V
 	//	-> 
-	//	temp(C) = { ADC(mV) - 685mV } / 2
-	// let read = adc::read_ref(&TEMPERATURE_ADC, 3.3);
+	//	temp(C) = { ADC(mV) - 650mV } / 0.00104
+	let read = adc::read_ref(&TEMPERATURE_ADC, 2.5);
 
-	// ((read - 0.685) / 2.0) as i8
-	adc::read(&TEMPERATURE_ADC)
+	((read - 0.65166) / 0.00104) as i8
 }
 
-#[allow(dead_code)]
-pub fn nvic_enable(num: u8) {
-	free(|cs| {
-		if let Some(ref mut nvic) = NVIC_HANDLE.borrow(cs).borrow_mut().deref_mut() {
-			let read = nvic.iser[0].read();
-			unsafe { nvic.iser[0].write(read | (1 << num)) };
-		}
-	});
-}
+
 
 #[allow(dead_code)]
 pub fn restart() {
@@ -256,10 +246,6 @@ fn init_clock(clock: msp432p401r_pac::CS) {
 			b_clk: 32_768,
 		};
 	}
-}
-
-fn init_nvic(nvic: cortex_m::peripheral::NVIC) {
-	free(|cs| NVIC_HANDLE.borrow(cs).replace(Some(nvic)));
 }
 
 fn init_temp_sensor() {
