@@ -205,6 +205,9 @@ pub fn read(adc: &Adc) -> u16 {
 
 			// Clear flag when finished
 			adc14.adc14clrifgr0.write(|w| w.clradc14ifg0().set_bit());
+			adc14.adc14ctl0.modify(|_, w| w
+				.adc14enc().clear_bit()
+			);
 
 			adc14.adc14mem[0].read().conversion_results().bits()
 		}
