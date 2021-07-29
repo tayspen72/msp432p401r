@@ -26,7 +26,7 @@ const COUNTER: counter::Counter = counter::Counter {
 	function_select: config::COUNTER_FUNCTION_SELECT
 };
 
-const UPDATE_FREQUENCY: u32 = 25;	// Update (25/100)x per second
+const UPDATE_TIME_MS: u32 = 250;
 
 //==============================================================================
 // Public Functions
@@ -54,6 +54,7 @@ pub fn init() {
 //==============================================================================
 pub fn task_handler(info: &mut app::Info){
 	static mut LAST_TIME: u32 = 0;
+	static mut LAST_TIME_MS: u32 = 0;
 	
 	// Clear any previously set flags
 	if info.change_flags.speed {
@@ -61,10 +62,10 @@ pub fn task_handler(info: &mut app::Info){
 	}
 	
 	unsafe { 
-		if rtc::get_diff(LAST_TIME) > UPDATE_FREQUENCY {
+		if rtc::get_diff_ms(LAST_TIME, LAST_TIME_MS) > UPDATE_TIME_MS {
+			LAST_TIME_MS = rtc::get_time_ms();
 			LAST_TIME = rtc::get_time();
-			// let speed = counter::get_count(&COUNTER);
-			let speed = mcu::get_temperature();
+			let speed = counter::get_count(&COUNTER);
 			
 			if info.speed != speed {
 				info.change_flags.speed = true;
