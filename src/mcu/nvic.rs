@@ -30,7 +30,7 @@ pub fn init(nvic: cortex_m::peripheral::NVIC) {
 }
 
 #[allow(dead_code)]
-pub fn nvic_clear_pending(num: u8) {
+pub fn clear_pending(num: u8) {
 	free(|cs| {
 		if let Some(ref mut nvic) = NVIC_HANDLE.borrow(cs).borrow_mut().deref_mut() {
 			if num < 32 {
@@ -47,7 +47,7 @@ pub fn nvic_clear_pending(num: u8) {
 }
 
 #[allow(dead_code)]
-pub fn nvic_enable(num: u8) {
+pub fn enable(num: u8) {
 	free(|cs| {
 		if let Some(ref mut nvic) = NVIC_HANDLE.borrow(cs).borrow_mut().deref_mut() {
 			if num < 32 {

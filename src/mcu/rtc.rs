@@ -135,8 +135,8 @@ fn configure(rtc: &msp432p401r_pac::RTC_C, wake_interval: WakeInterval) {
 	);
 
 	// Set the interrupt bit
-	nvic::nvic_clear_pending(RTC_C_IRQ_N);
-	nvic::nvic_enable(RTC_C_IRQ_N);
+	nvic::clear_pending(RTC_C_IRQ_N);
+	nvic::enable(RTC_C_IRQ_N);
 
 	// Release hold on the RTC
 	rtc.rtcctl13.modify(|_, w| w.rtchold().clear_bit());

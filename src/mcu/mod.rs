@@ -15,6 +15,7 @@ pub mod adc;
 pub mod counter;
 pub mod eusci;
 pub mod gpio;
+pub mod input;
 pub mod nvic;
 pub mod rtc;
 pub mod systick;
@@ -30,17 +31,17 @@ pub enum McuState {
 #[allow(dead_code)]
 #[derive(Copy, Clone, PartialEq)]
 pub enum Port{
-	Port1,
-	Port2,
-	Port3,
-	Port4,
-	Port5,
-	Port6,
-	Port7,
-	Port8,
-	Port9,
-	Port10,
-	PortJ,
+	Port1 = 0,
+	Port2 = 1,
+	Port3 = 2,
+	Port4 = 3,
+	Port5 = 4,
+	Port6 = 5,
+	Port7 = 6,
+	Port8 = 7,
+	Port9 = 8,
+	Port10 =9,
+	PortJ = 10,
 	PortDisabled
 }
 
@@ -256,5 +257,5 @@ fn init_temp_sensor() {
 // Task Handler
 //==============================================================================
 pub fn task_handler() {
-	
+	input::task_handler();
 }
