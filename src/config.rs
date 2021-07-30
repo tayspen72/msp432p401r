@@ -15,6 +15,14 @@ use crate::mcu::{adc, counter, eusci};
 
 
 //==============================================================================
+// Button
+//==============================================================================
+#[allow(dead_code)] pub const BUTTON_1_PORT: mcu::Port = mcu::Port::Port1;
+#[allow(dead_code)] pub const BUTTON_1_PIN: u8 = 1;
+#[allow(dead_code)] pub const BUTTON_2_PORT: mcu::Port = mcu::Port::Port1;
+#[allow(dead_code)] pub const BUTTON_2_PIN: u8 = 4;
+
+//==============================================================================
 // Clock
 //==============================================================================
 #[allow(dead_code)] pub const LFXCLK_IN_PORT: mcu::Port = mcu::Port::PortJ;
@@ -71,8 +79,14 @@ use crate::mcu::{adc, counter, eusci};
 
 //==============================================================================
 // LCD
+// LED
 //==============================================================================
-
+#[allow(dead_code)] pub const LED_RED_PORT: mcu::Port = mcu::Port::Port2;
+#[allow(dead_code)] pub const LED_RED_PIN: u8 = 0;
+#[allow(dead_code)] pub const LED_GREEN_PORT: mcu::Port = mcu::Port::Port2;
+#[allow(dead_code)] pub const LED_GREEN_PIN: u8 = 1;
+#[allow(dead_code)] pub const LED_BLUE_PORT: mcu::Port = mcu::Port::Port2;
+#[allow(dead_code)] pub const LED_BLUE_PIN: u8 = 2;
 
 //==============================================================================
 // Push Button
