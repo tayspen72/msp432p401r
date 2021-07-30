@@ -11,7 +11,7 @@ use core::cell::RefCell;
 use core::ops::DerefMut;
 use cortex_m::interrupt::{free, Mutex};
 use crate::mcu;
-use crate::mcu::nvic;
+use crate::mcu::{input, nvic};
 use msp432p401r_pac;
 
 //==============================================================================
@@ -106,6 +106,30 @@ pub fn get_pin_state(port: mcu::Port, pin: u8) -> PinState {
 		_ => PinState::PinHigh
 	}
 }
+
+#[allow(dead_code)]
+pub fn interrupt_edge(port: mcu::Port, pin: u8, edge: input::EdgeTrigger){
+	free(|cs| {
+		if let Some(ref mut dio) = DIO_HANDLE.borrow(cs).borrow_mut().deref_mut() {
+			let val = if edge == input::EdgeTrigger::Falling { 1 } else { 0 };
+			match port {
+				mcu::Port::Port1 =>  dio.paies.modify(|r, w| unsafe { w.p1ies().bits(r.p1ies().bits() & !(1 << pin) | (val << pin)) }),
+				mcu::Port::Port2 =>  dio.paies.modify(|r, w| unsafe { w.p2ies().bits(r.p2ies().bits() & !(1 << pin) | (val << pin)) }),
+				mcu::Port::Port3 =>  dio.pbies.modify(|r, w| unsafe { w.p3ies().bits(r.p3ies().bits() & !(1 << pin) | (val << pin)) }),
+				mcu::Port::Port4 =>  dio.pbies.modify(|r, w| unsafe { w.p4ies().bits(r.p4ies().bits() & !(1 << pin) | (val << pin)) }),
+				mcu::Port::Port5 =>  dio.pcies.modify(|r, w| unsafe { w.p5ies().bits(r.p5ies().bits() & !(1 << pin) | (val << pin)) }),
+				mcu::Port::Port6 =>  dio.pcies.modify(|r, w| unsafe { w.p6ies().bits(r.p6ies().bits() & !(1 << pin) | (val << pin)) }),
+				mcu::Port::Port7 => (),
+				mcu::Port::Port8 => (),
+				mcu::Port::Port9 => (),
+				mcu::Port::Port10 => (),
+				mcu::Port::PortJ => (),
+				mcu::Port::PortDisabled => (),
+			}
+		}
+	});
+}
+
 
 #[allow(dead_code)]
 pub fn interrupt_enable(port: mcu::Port, pin: u8) {
@@ -310,7 +334,7 @@ pub fn set_pin_function_select(config: &PinConfig, function: u8){
 //==============================================================================
 // Interrupt Handler
 //==============================================================================
-pub fn interrupt_handler(port: mcu::Port) -> (u8, PinState) {
+pub fn interrupt_handler(port: mcu::Port) -> u8 {
 	let mut flags: u8 = 0;
 
 	free(|cs|
@@ -355,9 +379,7 @@ pub fn interrupt_handler(port: mcu::Port) -> (u8, PinState) {
 		pin += 1;
 	}
 	
-	let state = get_pin_state(port, pin);
-
-	(pin, state)
+	pin
 }
 
 //==============================================================================

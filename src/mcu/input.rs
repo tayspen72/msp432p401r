@@ -17,11 +17,19 @@ use msp432p401r_pac::interrupt;
 // Enums, Structs, and Types
 //==============================================================================
 #[allow(dead_code)]
+#[derive(Copy, Clone, PartialEq)]
+pub enum EdgeTrigger {
+	Falling,
+	Rising,
+}
+
+#[allow(dead_code)]
 pub struct Input {
 	pub port: mcu::Port,
 	pub pin: u8,
 	pub pull: gpio::PinPull,
-	pub callback: fn(gpio::PinState)
+	pub edge: EdgeTrigger,
+	pub callback: fn()
 }
 
 #[allow(dead_code)]
@@ -29,7 +37,6 @@ pub struct Input {
 pub struct QueueEntry {
 	pub port: mcu::Port,
 	pub pin: u8,
-	state: gpio::PinState
 }
 
 //==============================================================================
@@ -43,11 +50,10 @@ static mut QUEUE: [QueueEntry; QUEUE_LENGTH as usize] = {
 	[ QueueEntry {
 		port: mcu::Port::PortDisabled,
 		pin: 0,
-		state: gpio::PinState::PinLow
 	}; QUEUE_LENGTH as usize ]
 };
 
-static mut CALLBACK_QUEUE: [[fn(gpio::PinState); 8]; 6] = [
+static mut CALLBACK_QUEUE: [[fn(); 8]; 6] = [
 	[dummy_handler; 8]; 6
 ];
 
@@ -64,6 +70,7 @@ pub fn configure(input: &Input){
 		state: gpio::PinState::PinHigh	// will be overridden by pin pull
 	});
 
+	gpio::interrupt_edge(input.port, input.pin, input.edge);
 	gpio::interrupt_enable(input.port, input.pin);
 
 	unsafe { 
@@ -74,7 +81,7 @@ pub fn configure(input: &Input){
 //==============================================================================
 // Private Functions
 //==============================================================================
-fn dummy_handler(_state: gpio::PinState) {
+fn dummy_handler() {
 	// Empty function for the callback queue
 }
 
@@ -83,7 +90,7 @@ fn dummy_handler(_state: gpio::PinState) {
 //==============================================================================
 fn interrupt_handler(port: mcu::Port) {
 	// Call the GPIO interrupt handler to service the IFG register and get flags
-	let (pin, state) = gpio::interrupt_handler(port);
+	let pin = gpio::interrupt_handler(port);
 	let tail = free(|cs| TAIL.borrow(cs).get());
 	
 	unsafe {
@@ -92,7 +99,6 @@ fn interrupt_handler(port: mcu::Port) {
 		QUEUE[tail as usize] = QueueEntry {
 			port: port,
 			pin: pin,
-			state: state
 		}
 	}
 }
@@ -138,7 +144,7 @@ pub fn task_handler() {
 		// For this input event, load and use callback from queue
 		unsafe { 
 			let callback = CALLBACK_QUEUE[QUEUE[head].pin as usize][QUEUE[head].port as usize];
-			callback(QUEUE[head].state);
+			callback();
 
 			// Increment head index to traverse queue
 			head += 1;
@@ -147,4 +153,6 @@ pub fn task_handler() {
 			}
 		}
 	}
+	
+	free(|cs| HEAD.borrow(cs).set(tail as u8));
 }
