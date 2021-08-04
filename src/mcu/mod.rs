@@ -19,6 +19,7 @@ pub mod input;
 pub mod nvic;
 pub mod rtc;
 pub mod systick;
+pub mod timer;
 pub mod wdt;
 
 //==============================================================================
@@ -150,6 +151,7 @@ pub fn init() {
 
 	// These peripherals rely on the core clock being stable
 	systick::init(cortex_peripherals.SYST);
+	timer::init(peripherals.TIMER32);
 	rtc::init(peripherals.RTC_C, rtc::WakeInterval::Wake250Ms);
 
 	init_temp_sensor();
