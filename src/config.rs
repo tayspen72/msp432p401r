@@ -79,6 +79,31 @@ use crate::mcu::{adc, counter, eusci};
 
 //==============================================================================
 // LCD
+//==============================================================================
+#[allow(dead_code)] pub const LCD_RS_PORT: mcu::Port = mcu::Port::Port6;
+#[allow(dead_code)] pub const LCD_RS_PIN: u8 = 0;
+#[allow(dead_code)] pub const LCD_RW_PORT: mcu::Port = mcu::Port::Port3;
+#[allow(dead_code)] pub const LCD_RW_PIN: u8 = 2;
+#[allow(dead_code)] pub const LCD_EN_PORT: mcu::Port = mcu::Port::Port4;
+#[allow(dead_code)] pub const LCD_EN_PIN: u8 = 3;
+#[allow(dead_code)] pub const LCD_D0_PORT: mcu::Port = mcu::Port::Port4;
+#[allow(dead_code)] pub const LCD_D0_PIN: u8 = 0;
+#[allow(dead_code)] pub const LCD_D1_PORT: mcu::Port = mcu::Port::Port4;
+#[allow(dead_code)] pub const LCD_D1_PIN: u8 = 1;
+#[allow(dead_code)] pub const LCD_D2_PORT: mcu::Port = mcu::Port::Port4;
+#[allow(dead_code)] pub const LCD_D2_PIN: u8 = 2;
+#[allow(dead_code)] pub const LCD_D3_PORT: mcu::Port = mcu::Port::Port4;
+#[allow(dead_code)] pub const LCD_D3_PIN: u8 = 3;
+#[allow(dead_code)] pub const LCD_D4_PORT: mcu::Port = mcu::Port::Port4;
+#[allow(dead_code)] pub const LCD_D4_PIN: u8 = 4;
+#[allow(dead_code)] pub const LCD_D5_PORT: mcu::Port = mcu::Port::Port4;
+#[allow(dead_code)] pub const LCD_D5_PIN: u8 = 5;
+#[allow(dead_code)] pub const LCD_D6_PORT: mcu::Port = mcu::Port::Port4;
+#[allow(dead_code)] pub const LCD_D6_PIN: u8 = 6;
+#[allow(dead_code)] pub const LCD_D7_PORT: mcu::Port = mcu::Port::Port4;
+#[allow(dead_code)] pub const LCD_D7_PIN: u8 = 7;
+
+//==============================================================================
 // LED
 //==============================================================================
 #[allow(dead_code)] pub const LED_RED_PORT: mcu::Port = mcu::Port::Port2;

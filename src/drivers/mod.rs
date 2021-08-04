@@ -7,6 +7,7 @@
 // Crates and Mods
 //==============================================================================
 pub mod fuel;
+pub mod lcd;
 pub mod led;
 pub mod odometer;
 pub mod quadalpha;
@@ -29,6 +30,7 @@ use crate::app;
 //==============================================================================
 pub fn init() {
 	fuel::init();
+	lcd::init();
 	led::init();
 	odometer::init();
 	quadalpha::init();
@@ -45,6 +47,7 @@ pub fn init() {
 //==============================================================================
 pub fn task_handler(info: &mut app::Info) {
 	fuel::task_handler(info);
+	lcd::task_handler();
 	led::task_handler();
 	odometer::task_handler(info);
 	quadalpha::task_handler(info);
