@@ -15,6 +15,14 @@ use crate::mcu::{adc, counter, eusci};
 
 
 //==============================================================================
+// Button
+//==============================================================================
+#[allow(dead_code)] pub const BUTTON_1_PORT: mcu::Port = mcu::Port::Port1;
+#[allow(dead_code)] pub const BUTTON_1_PIN: u8 = 1;
+#[allow(dead_code)] pub const BUTTON_2_PORT: mcu::Port = mcu::Port::Port1;
+#[allow(dead_code)] pub const BUTTON_2_PIN: u8 = 4;
+
+//==============================================================================
 // Clock
 //==============================================================================
 #[allow(dead_code)] pub const LFXCLK_IN_PORT: mcu::Port = mcu::Port::PortJ;

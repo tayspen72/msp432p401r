@@ -11,6 +11,7 @@ use core::cell::RefCell;
 use core::ops::DerefMut;
 use cortex_m::interrupt::{free, Mutex};
 use crate::mcu;
+use crate::mcu::{input, nvic};
 use msp432p401r_pac;
 
 //==============================================================================
@@ -73,14 +74,14 @@ pub fn init(dio: msp432p401r_pac::DIO){
 }
 
 #[allow(dead_code)]
-pub fn get_pin_state(config: &PinConfig) -> PinState {
+pub fn get_pin_state(port: mcu::Port, pin: u8) -> PinState {
 	unsafe { if !INITIALIZED {
 		return PinState::PinLow;
 	}}
 	
 	let read = free(|cs|
 		if let Some(ref mut dio) = DIO_HANDLE.borrow(cs).borrow_mut().deref_mut() {
-			match config.port {
+			match port {
 				mcu::Port::Port1  => dio.pain.read().p1in().bits(),
 				mcu::Port::Port2  => dio.pain.read().p2in().bits(),
 				mcu::Port::Port3  => dio.pbin.read().p3in().bits(),
@@ -100,10 +101,62 @@ pub fn get_pin_state(config: &PinConfig) -> PinState {
 		}
 	);
 	
-	match read & (1 << config.pin) {
+	match read & (1 << pin) {
 		0 => PinState::PinLow,
 		_ => PinState::PinHigh
 	}
+}
+
+#[allow(dead_code)]
+pub fn interrupt_edge(port: mcu::Port, pin: u8, edge: input::EdgeTrigger){
+	free(|cs| {
+		if let Some(ref mut dio) = DIO_HANDLE.borrow(cs).borrow_mut().deref_mut() {
+			let val = if edge == input::EdgeTrigger::Falling { 1 } else { 0 };
+			match port {
+				mcu::Port::Port1 =>  dio.paies.modify(|r, w| unsafe { w.p1ies().bits(r.p1ies().bits() & !(1 << pin) | (val << pin)) }),
+				mcu::Port::Port2 =>  dio.paies.modify(|r, w| unsafe { w.p2ies().bits(r.p2ies().bits() & !(1 << pin) | (val << pin)) }),
+				mcu::Port::Port3 =>  dio.pbies.modify(|r, w| unsafe { w.p3ies().bits(r.p3ies().bits() & !(1 << pin) | (val << pin)) }),
+				mcu::Port::Port4 =>  dio.pbies.modify(|r, w| unsafe { w.p4ies().bits(r.p4ies().bits() & !(1 << pin) | (val << pin)) }),
+				mcu::Port::Port5 =>  dio.pcies.modify(|r, w| unsafe { w.p5ies().bits(r.p5ies().bits() & !(1 << pin) | (val << pin)) }),
+				mcu::Port::Port6 =>  dio.pcies.modify(|r, w| unsafe { w.p6ies().bits(r.p6ies().bits() & !(1 << pin) | (val << pin)) }),
+				mcu::Port::Port7 => (),
+				mcu::Port::Port8 => (),
+				mcu::Port::Port9 => (),
+				mcu::Port::Port10 => (),
+				mcu::Port::PortJ => (),
+				mcu::Port::PortDisabled => (),
+			}
+		}
+	});
+}
+
+
+#[allow(dead_code)]
+pub fn interrupt_enable(port: mcu::Port, pin: u8) {
+	free(|cs|
+		if let Some(ref mut dio) = DIO_HANDLE.borrow(cs).borrow_mut().deref_mut() {
+			match port {
+				mcu::Port::Port1  => dio.paie.modify(|r, w| unsafe { w.p1ie().bits(r.p1ie().bits() | (1 << pin)) }),
+				mcu::Port::Port2  => dio.paie.modify(|r, w| unsafe { w.p2ie().bits(r.p2ie().bits() | (1 << pin)) }),
+				mcu::Port::Port3  => dio.pbie.modify(|r, w| unsafe { w.p3ie().bits(r.p3ie().bits() | (1 << pin)) }),
+				mcu::Port::Port4  => dio.pbie.modify(|r, w| unsafe { w.p4ie().bits(r.p4ie().bits() | (1 << pin)) }),
+				mcu::Port::Port5  => dio.pcie.modify(|r, w| unsafe { w.p5ie().bits(r.p5ie().bits() | (1 << pin)) }),
+				mcu::Port::Port6  => dio.pcie.modify(|r, w| unsafe { w.p6ie().bits(r.p6ie().bits() | (1 << pin)) }),
+				mcu::Port::Port7  => (),
+				mcu::Port::Port8  => (),
+				mcu::Port::Port9  => (),
+				mcu::Port::Port10 => (),
+				mcu::Port::PortJ => (),
+				mcu::Port::PortDisabled => (),
+			}
+		}
+	);
+
+	if port == mcu::Port::Port1 || port == mcu::Port::Port2 || port == mcu::Port::Port3 
+		|| port == mcu::Port::Port4 || port == mcu::Port::Port5 || port == mcu::Port::Port6 {
+			nvic::clear_pending(port as u8 + 35);
+			nvic::enable(port as u8 + 35);
+		}
 }
 
 #[allow(dead_code)]
@@ -181,11 +234,11 @@ pub fn pin_setup(config: &PinConfig){
 	});
 	
 	// Set the pin state after this critical section is left
-	set_pin_state(config, state);
+	set_pin_state(config.port, config.pin, state);
 }
 
 #[allow(dead_code)]
-pub fn set_pin_state(config: &PinConfig, state: PinState){
+pub fn set_pin_state(port: mcu::Port, pin: u8, state: PinState){
 	unsafe { if !INITIALIZED {
 		return;
 	}}
@@ -193,18 +246,18 @@ pub fn set_pin_state(config: &PinConfig, state: PinState){
 	free(|cs| {
 		if let Some(ref mut dio) = DIO_HANDLE.borrow(cs).borrow_mut().deref_mut() {
 			let out = state as u8;
-			match config.port {
-				mcu::Port::Port1 =>  dio.paout.modify(|r, w| unsafe { w.p1out().bits(r.p1out().bits()   & !(1 << config.pin) | (out << config.pin)) }),
-				mcu::Port::Port2 =>  dio.paout.modify(|r, w| unsafe { w.p2out().bits(r.p2out().bits()   & !(1 << config.pin) | (out << config.pin)) }),
-				mcu::Port::Port3 =>  dio.pbout.modify(|r, w| unsafe { w.p3out().bits(r.p3out().bits()   & !(1 << config.pin) | (out << config.pin)) }),
-				mcu::Port::Port4 =>  dio.pbout.modify(|r, w| unsafe { w.p4out().bits(r.p4out().bits()   & !(1 << config.pin) | (out << config.pin)) }),
-				mcu::Port::Port5 =>  dio.pcout.modify(|r, w| unsafe { w.p5out().bits(r.p5out().bits()   & !(1 << config.pin) | (out << config.pin)) }),
-				mcu::Port::Port6 =>  dio.pcout.modify(|r, w| unsafe { w.p6out().bits(r.p6out().bits()   & !(1 << config.pin) | (out << config.pin)) }),
-				mcu::Port::Port7 =>  dio.pdout.modify(|r, w| unsafe { w.p7out().bits(r.p7out().bits()   & !(1 << config.pin) | (out << config.pin)) }),
-				mcu::Port::Port8 =>  dio.pdout.modify(|r, w| unsafe { w.p8out().bits(r.p8out().bits()   & !(1 << config.pin) | (out << config.pin)) }),
-				mcu::Port::Port9 =>  dio.peout.modify(|r, w| unsafe { w.p9out().bits(r.p9out().bits()   & !(1 << config.pin) | (out << config.pin)) }),
-				mcu::Port::Port10 => dio.peout.modify(|r, w| unsafe { w.p10out().bits(r.p10out().bits() & !(1 << config.pin) | (out << config.pin)) }),
-				mcu::Port::PortJ =>  dio.pjout.modify(|r, w| unsafe { w.pjout().bits(r.pjout().bits()   & !(1 << config.pin) | ((out as u16) << config.pin)) }),
+			match port {
+				mcu::Port::Port1 =>  dio.paout.modify(|r, w| unsafe { w.p1out().bits(r.p1out().bits()   & !(1 << pin) | (out << pin)) }),
+				mcu::Port::Port2 =>  dio.paout.modify(|r, w| unsafe { w.p2out().bits(r.p2out().bits()   & !(1 << pin) | (out << pin)) }),
+				mcu::Port::Port3 =>  dio.pbout.modify(|r, w| unsafe { w.p3out().bits(r.p3out().bits()   & !(1 << pin) | (out << pin)) }),
+				mcu::Port::Port4 =>  dio.pbout.modify(|r, w| unsafe { w.p4out().bits(r.p4out().bits()   & !(1 << pin) | (out << pin)) }),
+				mcu::Port::Port5 =>  dio.pcout.modify(|r, w| unsafe { w.p5out().bits(r.p5out().bits()   & !(1 << pin) | (out << pin)) }),
+				mcu::Port::Port6 =>  dio.pcout.modify(|r, w| unsafe { w.p6out().bits(r.p6out().bits()   & !(1 << pin) | (out << pin)) }),
+				mcu::Port::Port7 =>  dio.pdout.modify(|r, w| unsafe { w.p7out().bits(r.p7out().bits()   & !(1 << pin) | (out << pin)) }),
+				mcu::Port::Port8 =>  dio.pdout.modify(|r, w| unsafe { w.p8out().bits(r.p8out().bits()   & !(1 << pin) | (out << pin)) }),
+				mcu::Port::Port9 =>  dio.peout.modify(|r, w| unsafe { w.p9out().bits(r.p9out().bits()   & !(1 << pin) | (out << pin)) }),
+				mcu::Port::Port10 => dio.peout.modify(|r, w| unsafe { w.p10out().bits(r.p10out().bits() & !(1 << pin) | (out << pin)) }),
+				mcu::Port::PortJ =>  dio.pjout.modify(|r, w| unsafe { w.pjout().bits(r.pjout().bits()   & !(1 << pin) | ((out as u16) << pin)) }),
 				mcu::Port::PortDisabled => (),
 			}
 		}
@@ -281,7 +334,53 @@ pub fn set_pin_function_select(config: &PinConfig, function: u8){
 //==============================================================================
 // Interrupt Handler
 //==============================================================================
+pub fn interrupt_handler(port: mcu::Port) -> u8 {
+	let mut flags: u8 = 0;
 
+	free(|cs|
+		if let Some(ref mut dio) = DIO_HANDLE.borrow(cs).borrow_mut().deref_mut() {
+			match port {
+				mcu::Port::Port1  => {
+					flags = dio.paifg.read().p1ifg().bits();
+					dio.paifg.write(|w| unsafe { w.p1ifg().bits(0x00) });
+				},
+				mcu::Port::Port2  => {
+					flags = dio.paifg.read().p2ifg().bits();
+					dio.paifg.write(|w| unsafe { w.p2ifg().bits(0x00) });
+				},
+				mcu::Port::Port3  => {
+					flags = dio.pbifg.read().p3ifg().bits();
+					dio.pbifg.write(|w| unsafe { w.p3ifg().bits(0x00) });
+				},
+				mcu::Port::Port4  => {
+					flags = dio.pbifg.read().p4ifg().bits();
+					dio.pbifg.write(|w| unsafe { w.p4ifg().bits(0x00) });
+				},
+				mcu::Port::Port5  => {
+					flags = dio.pcifg.read().p5ifg().bits();
+					dio.pcifg.write(|w| unsafe { w.p5ifg().bits(0x00) });
+				},
+				mcu::Port::Port6  => {
+					flags = dio.pcifg.read().p6ifg().bits();
+					dio.pcifg.write(|w| unsafe { w.p6ifg().bits(0x00) });
+				},
+				mcu::Port::Port7  => (),
+				mcu::Port::Port8  => (),
+				mcu::Port::Port9  => (),
+				mcu::Port::Port10 => (),
+				mcu::Port::PortJ => (),
+				mcu::Port::PortDisabled => (),
+			}
+		}
+	);
+	let mut pin: u8 = 0;
+	while flags & 0x1 == 0 {
+		flags >>= 1;
+		pin += 1;
+	}
+	
+	pin
+}
 
 //==============================================================================
 // Task Handler
