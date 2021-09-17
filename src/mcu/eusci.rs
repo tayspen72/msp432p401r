@@ -108,6 +108,7 @@ pub fn init(
 	}
 }
 
+#[allow(dead_code)]
 pub fn i2c_init(i2c: &I2C){
 	gpio::pin_setup(&gpio::PinConfig {
 		port: i2c.sda_port,
@@ -286,6 +287,7 @@ pub fn i2c_init(i2c: &I2C){
 	});
 }
 
+#[allow(dead_code)]
 pub fn i2c_write_block(i2c: &I2C, data: &[u8], send_stop: bool) -> Option<I2CError> {
 	free(|cs| {
 		match i2c.eusci {
@@ -530,6 +532,7 @@ pub fn i2c_write_block(i2c: &I2C, data: &[u8], send_stop: bool) -> Option<I2CErr
 	})
 }
 
+#[allow(dead_code)]
 pub fn i2c_read_block(_i2c: &I2C, _data: &[u8], _send_stop: bool) -> Option<I2CError> {
 	Some(I2CError::Unknown)
 }

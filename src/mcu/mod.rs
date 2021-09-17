@@ -143,7 +143,6 @@ pub fn init() {
 
 	// Ensure SYSTICK is using the correct clock when running. Init after clock
 	systick::init(cortex_peripherals.SYST);
-
 }
 
 #[allow(dead_code)]
